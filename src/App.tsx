@@ -92,7 +92,9 @@ function App() {
           <div className="w-full flex flex-col items-center">
             {stage === 'drawing' && (
               <p className="mb-4 text-purple-200 text-lg tracking-widest animate-pulse">
-                请抽取你的第 {drawnCards.length + 1} 张牌 ({drawnCards.length}/3)
+                {drawnCards.length < 3
+                  ? `请抽取你的第 ${drawnCards.length + 1} 张牌 (${drawnCards.length}/3)`
+                  : '命运之轮开始转动...'}
               </p>
             )}
             <Deck
