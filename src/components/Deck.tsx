@@ -55,7 +55,7 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
                     {[...Array(22)].map((_, i) => (
                         <motion.div
                             key={i}
-                            className={`w-48 h-72 rounded-xl shadow-2xl cursor-pointer hover:-translate-y-12 transition-transform duration-300 relative group overflow-hidden border-2 border-yellow-600/50 bg-slate-900 ${drawnIndices.includes(i) ? 'pointer-events-none' : ''}`}
+                            className={`w-48 h-72 rounded-xl shadow-2xl cursor-pointer hover:-translate-y-12 transition-transform duration-300 relative group overflow-hidden border-2 border-yellow-600/50 bg-slate-900 ${(drawnIndices.includes(i) || drawnIndices.length >= 3) ? 'pointer-events-none' : ''}`}
                             initial={{ opacity: 0, x: -100 }}
                             animate={{
                                 x: 0,
@@ -64,7 +64,7 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
                                 scale: drawnIndices.includes(i) ? 0.8 : 1, // Shrink slightly
                             }}
                             transition={{ duration: 1.5, ease: "easeInOut", delay: drawnIndices.includes(i) ? 0 : i * 0.02 }}
-                            onClick={() => !drawnIndices.includes(i) && onDraw(i)}
+                            onClick={() => !drawnIndices.includes(i) && drawnIndices.length < 3 && onDraw(i)}
                             whileHover={{ scale: 1.05, zIndex: 100 }}
                         >
                             {/* Dissolve Particles - Rendered ON TOP of card content, independent opacity */}
