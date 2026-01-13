@@ -55,32 +55,57 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
                     {[...Array(22)].map((_, i) => (
                         <motion.div
                             key={i}
-                            className={`w-48 h-72 rounded-xl shadow-2xl cursor-pointer hover:-translate-y-12 transition-transform duration-300 relative group overflow-hidden border-2 border-yellow-600/50 bg-slate-900 ${(drawnIndices.includes(i) || drawnIndices.length >= 3) ? 'pointer-events-none' : ''}`}
+                            className={`w-48 h-72 rounded-xl shadow-2xl cursor-pointer hover:-translate-y-12 hover:shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_60px_rgba(251,191,36,0.3)] transition-all duration-300 relative group overflow-hidden border-2 border-yellow-600/50 hover:border-amber-400/80 bg-slate-900 ${(drawnIndices.includes(i) || drawnIndices.length >= 3) ? 'pointer-events-none' : ''}`}
                             initial={{ opacity: 0, x: -100 }}
                             animate={{
                                 x: 0,
-                                y: drawnIndices.includes(i) ? -1000 : 0, // Slide up off screen
-                                opacity: drawnIndices.includes(i) ? 0 : 1, // Fade out as it goes
-                                scale: drawnIndices.includes(i) ? 0.8 : 1, // Shrink slightly
+                                y: drawnIndices.includes(i) ? -500 : 0,
+                                opacity: drawnIndices.includes(i) ? 0 : 1,
+                                scale: drawnIndices.includes(i) ? 0.3 : 1,
+                                rotate: drawnIndices.includes(i) ? 15 : 0,
+                                zIndex: drawnIndices.includes(i) ? 200 : 1, // Put selected card on top
                             }}
-                            transition={{ duration: 1.5, ease: "easeInOut", delay: drawnIndices.includes(i) ? 0 : i * 0.02 }}
+                            transition={{
+                                duration: drawnIndices.includes(i) ? 2 : 0.5,
+                                ease: drawnIndices.includes(i) ? [0.4, 0, 0.2, 1] : "easeInOut",
+                                delay: drawnIndices.includes(i) ? 0 : i * 0.02
+                            }}
                             onClick={() => !drawnIndices.includes(i) && drawnIndices.length < 3 && onDraw(i)}
                             whileHover={{ scale: 1.05, zIndex: 100 }}
                         >
-                            {/* Dissolve Particles - Rendered ON TOP of card content, independent opacity */}
+                            {/* Selection Flash - Bright Glow Effect */}
+                            {drawnIndices.includes(i) && (
+                                <motion.div
+                                    className="absolute inset-0 z-40 rounded-xl pointer-events-none"
+                                    initial={{ opacity: 0, boxShadow: '0 0 0px rgba(251,191,36,0)' }}
+                                    animate={{
+                                        opacity: [0, 1, 0],
+                                        boxShadow: [
+                                            '0 0 0px rgba(251,191,36,0)',
+                                            '0 0 80px rgba(251,191,36,0.9), 0 0 120px rgba(168,85,247,0.7)',
+                                            '0 0 0px rgba(251,191,36,0)'
+                                        ]
+                                    }}
+                                    transition={{ duration: 1.2, ease: "easeOut" }}
+                                />
+                            )}
+
+                            {/* Dissolve Particles - More Visible */}
                             {drawnIndices.includes(i) && (
                                 <div className="absolute inset-0 z-50 pointer-events-none">
-                                    {[...Array(30)].map((_, p) => ( // Increased to 30 particles
+                                    {[...Array(50)].map((_, p) => (
                                         <div
                                             key={p}
                                             className="particle-sparkle"
                                             style={{
-                                                top: `${50 + (Math.random() - 0.5) * 40}%`, // Start closer to center
-                                                left: `${50 + (Math.random() - 0.5) * 40}%`,
-                                                '--tx': `${(Math.random() - 0.5) * 300}px`, // Wider explosion
-                                                '--ty': `${(Math.random() - 0.5) * 300}px`,
-                                                animationDuration: `${0.6 + Math.random() * 0.4}s`,
-                                                animationDelay: `${Math.random() * 0.2}s`
+                                                top: `${50 + (Math.random() - 0.5) * 60}%`,
+                                                left: `${50 + (Math.random() - 0.5) * 60}%`,
+                                                '--tx': `${(Math.random() - 0.5) * 400}px`,
+                                                '--ty': `${(Math.random() - 0.5) * 400}px`,
+                                                animationDuration: `${0.8 + Math.random() * 0.6}s`,
+                                                animationDelay: `${Math.random() * 0.3}s`,
+                                                width: `${4 + Math.random() * 4}px`,
+                                                height: `${4 + Math.random() * 4}px`,
                                             } as React.CSSProperties}
                                         />
                                     ))}

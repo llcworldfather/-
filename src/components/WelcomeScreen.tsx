@@ -30,8 +30,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuest
             {/* Input Section */}
             <div className="w-full space-y-8">
                 <div className="relative group">
-
-
                     <input
                         type="text"
                         value={question}
