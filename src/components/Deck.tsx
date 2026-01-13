@@ -122,16 +122,50 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
                                 transition={{ duration: 1.5 }}
                             >
                                 {/* Card Back Design */}
-                                <div className="absolute inset-2 border border-yellow-600/30 rounded-lg flex items-center justify-center bg-[#1a0b2e]">
+                                <div className="absolute inset-2 border border-yellow-600/30 rounded-lg flex items-center justify-center bg-[#1a0b2e] overflow-hidden">
+                                    {/* Base radial glow */}
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/40 via-transparent to-transparent opacity-50"></div>
+
+                                    {/* Stardust texture */}
                                     <div className="w-full h-full opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+
+                                    {/* Corner Ornaments */}
+                                    <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-amber-500/30 rounded-tl-sm"></div>
+                                    <div className="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-amber-500/30 rounded-tr-sm"></div>
+                                    <div className="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-amber-500/30 rounded-bl-sm"></div>
+                                    <div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-amber-500/30 rounded-br-sm"></div>
+
+                                    {/* Outer decorative ring */}
+                                    <div className="absolute inset-6 border border-purple-500/20 rounded-md"></div>
+
+                                    {/* Mystical symbols in corners */}
+                                    <span className="absolute top-5 left-5 text-amber-400/20 text-xs font-serif">✧</span>
+                                    <span className="absolute top-5 right-5 text-amber-400/20 text-xs font-serif">✧</span>
+                                    <span className="absolute bottom-5 left-5 text-amber-400/20 text-xs font-serif">✧</span>
+                                    <span className="absolute bottom-5 right-5 text-amber-400/20 text-xs font-serif">✧</span>
+
+                                    {/* Central diamond design */}
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="w-24 h-24 border-2 border-yellow-600/40 rotate-45 flex items-center justify-center transition-transform duration-700 group-hover:rotate-180">
                                             <div className="w-16 h-16 border border-yellow-600/30 rotate-45"></div>
                                         </div>
                                     </div>
+
+                                    {/* Decorative circles */}
+                                    <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-3 h-3 border border-purple-400/20 rounded-full"></div>
+                                    <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-3 h-3 border border-purple-400/20 rounded-full"></div>
+
+                                    {/* Vertical and horizontal lines */}
                                     <div className="absolute top-2 bottom-2 left-1/2 w-px bg-gradient-to-b from-transparent via-yellow-600/20 to-transparent"></div>
                                     <div className="absolute left-2 right-2 top-1/2 h-px bg-gradient-to-r from-transparent via-yellow-600/20 to-transparent"></div>
+
+                                    {/* Rune symbols on sides */}
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-300/15 text-lg font-serif">ᚲ</span>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300/15 text-lg font-serif">ᛃ</span>
+
+                                    {/* Top and bottom mystical text */}
+                                    <span className="absolute top-8 left-1/2 -translate-x-1/2 text-amber-300/15 text-[8px] tracking-[0.3em] font-serif">ARCANA</span>
+                                    <span className="absolute bottom-8 left-1/2 -translate-x-1/2 text-amber-300/15 text-[8px] tracking-[0.3em] font-serif">MYSTIC</span>
                                 </div>
 
                                 <div className="absolute inset-0 bg-purple-500/0 group-hover:bg-purple-500/10 transition-colors duration-300"></div>
