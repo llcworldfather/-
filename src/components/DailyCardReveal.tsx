@@ -4,11 +4,13 @@ import ReactMarkdown from 'react-markdown';
 import type { DrawnCard } from '../utils/tarot';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import { generateReadingImage, extractSummary, downloadImage } from '../utils/generateReadingImage';
 
 interface DailyCardRevealProps {
     card: DrawnCard | null;
     reading: string;
     isShuffling: boolean;
+    isReadingComplete: boolean;
     onReset: () => void;
 }
 
@@ -16,10 +18,12 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
     card,
     reading,
     isShuffling,
+    isReadingComplete,
     onReset
 }) => {
     const { language } = useLanguage();
     const [isFlipped, setIsFlipped] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // Trigger flip after card flies in
     useEffect(() => {
@@ -197,16 +201,49 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Reset Button */}
-                                <motion.button
-                                    onClick={onReset}
-                                    className="mt-6 mx-auto block px-8 py-3 bg-purple-600/80 hover:bg-purple-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-purple-500/30"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 2 }}
-                                >
-                                    {t('backButton', language)}
-                                </motion.button>
+                                {/* Action Buttons */}
+                                <div className="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
+                                    {isReadingComplete && (
+                                        <motion.button
+                                            onClick={async () => {
+                                                if (!card) return;
+                                                setIsGenerating(true);
+                                                try {
+                                                    const summary = extractSummary(reading);
+                                                    const blobUrl = await generateReadingImage({
+                                                        cards: [card],
+                                                        summary,
+                                                        language,
+                                                        isDaily: true
+                                                    });
+                                                    const date = new Date().toISOString().split('T')[0];
+                                                    downloadImage(blobUrl, `daily-tarot-${date}.png`);
+                                                } catch (error) {
+                                                    console.error('Failed to generate image:', error);
+                                                } finally {
+                                                    setIsGenerating(false);
+                                                }
+                                            }}
+                                            disabled={isGenerating}
+                                            className="px-8 py-3 bg-amber-600/80 hover:bg-amber-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.5 }}
+                                        >
+                                            <span>📷</span>
+                                            {isGenerating ? t('generatingImage', language) : t('generateImageButton', language)}
+                                        </motion.button>
+                                    )}
+                                    <motion.button
+                                        onClick={onReset}
+                                        className="px-8 py-3 bg-purple-600/80 hover:bg-purple-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-purple-500/30"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 2 }}
+                                    >
+                                        {t('backButton', language)}
+                                    </motion.button>
+                                </div>
                             </motion.div>
                         )}
                     </motion.div>

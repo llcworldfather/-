@@ -25,7 +25,10 @@ type TranslationKey =
     // Reading Display
     | 'readingTitle'
     | 'loading'
-    | 'resetButton';
+    | 'resetButton'
+    // Image Generation
+    | 'generateImageButton'
+    | 'generatingImage';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
     zh: {
@@ -53,7 +56,10 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         // Reading Display
         readingTitle: '星辰启示',
         loading: '正在聆听宇宙的低语...',
-        resetButton: '探索新的命运'
+        resetButton: '探索新的命运',
+        // Image Generation
+        generateImageButton: '生成图片',
+        generatingImage: '生成中...'
     },
     en: {
         // Welcome Screen
@@ -80,7 +86,10 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         // Reading Display
         readingTitle: 'Celestial Revelation',
         loading: 'Listening to the whispers of the universe...',
-        resetButton: 'Explore New Destiny'
+        resetButton: 'Explore New Destiny',
+        // Image Generation
+        generateImageButton: 'Generate Image',
+        generatingImage: 'Generating...'
     }
 };
 

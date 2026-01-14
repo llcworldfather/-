@@ -1,16 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
+import type { DrawnCard } from '../utils/tarot';
+import { generateReadingImage, extractSummary, downloadImage } from '../utils/generateReadingImage';
 
 interface ReadingDisplayProps {
     reading: string;
+    cards: DrawnCard[];
+    isReadingComplete: boolean;
     onReset: () => void;
 }
 
-export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, onReset }) => {
+export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, cards, isReadingComplete, onReset }) => {
     const { language } = useLanguage();
+    const [isGenerating, setIsGenerating] = useState(false);
 
     return (
         <motion.div
@@ -59,7 +64,37 @@ export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, onReset
                 )}
             </div>
 
-            <div className="mt-16 flex justify-center">
+            <div className="mt-16 flex flex-col sm:flex-row justify-center items-center gap-4">
+                {isReadingComplete && cards.length > 0 && (
+                    <button
+                        onClick={async () => {
+                            setIsGenerating(true);
+                            try {
+                                const summary = extractSummary(reading);
+                                const blobUrl = await generateReadingImage({
+                                    cards,
+                                    summary,
+                                    language,
+                                    isDaily: false
+                                });
+                                const date = new Date().toISOString().split('T')[0];
+                                downloadImage(blobUrl, `tarot-reading-${date}.png`);
+                            } catch (error) {
+                                console.error('Failed to generate image:', error);
+                            } finally {
+                                setIsGenerating(false);
+                            }
+                        }}
+                        disabled={isGenerating}
+                        className="group relative px-10 py-4 rounded-full border border-purple-500/30 hover:border-purple-400/50 bg-purple-500/10 hover:bg-purple-500/20 transition-all duration-500 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+                        <span className="flex items-center gap-3 text-sm uppercase tracking-[0.2em] text-purple-200 group-hover:text-purple-100 transition-colors">
+                            <span className="transition-transform group-hover:scale-110 duration-500">📷</span>
+                            {isGenerating ? t('generatingImage', language) : t('generateImageButton', language)}
+                        </span>
+                    </button>
+                )}
                 <button
                     onClick={onReset}
                     className="group relative px-10 py-4 rounded-full border border-white/10 hover:border-amber-500/50 bg-white/5 hover:bg-white/10 transition-all duration-500 overflow-hidden"

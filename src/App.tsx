@@ -23,9 +23,11 @@ function App() {
   const [deck, setDeck] = useState<TarotCard[]>([]);
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [reading, setReading] = useState('');
+  const [isReadingComplete, setIsReadingComplete] = useState(false);
   const [drawnIndices, setDrawnIndices] = useState<number[]>([]);
   const [dailyCard, setDailyCard] = useState<DrawnCard | null>(null);
   const [dailyReading, setDailyReading] = useState('');
+  const [isDailyReadingComplete, setIsDailyReadingComplete] = useState(false);
 
   // 用于追踪每日解读是否完成，以便保存到 LocalStorage
   const dailyReadingRef = useRef('');
@@ -36,6 +38,7 @@ function App() {
     setDrawnIndices([]);
     setDrawnCards([]); // Reset drawn cards
     setReading(''); // Reset reading
+    setIsReadingComplete(false);
 
     setTimeout(() => {
       setDeck(shuffleDeck());
@@ -52,6 +55,7 @@ function App() {
         // 直接从缓存加载，跳过洗牌动画
         setDailyCard(cachedData.card);
         setDailyReading(cachedData.reading);
+        setIsDailyReadingComplete(true); // Cached reading is complete
         setStage('daily-revealing');
         return;
       }
@@ -61,6 +65,7 @@ function App() {
     setStage('daily-shuffling');
     setDailyCard(null);
     setDailyReading('');
+    setIsDailyReadingComplete(false);
     dailyReadingRef.current = '';
 
     setTimeout(() => {
@@ -82,6 +87,8 @@ function App() {
             updateTodayDailyCardReading(newReading);
             return newReading;
           });
+        }).then(() => {
+          setIsDailyReadingComplete(true);
         });
       }, 1500);
     }, 2000);
@@ -120,6 +127,8 @@ function App() {
     // Fetch reading with streaming
     getTarotReading(question, drawnCards, language, (chunk) => {
       setReading(prev => prev + chunk);
+    }).then(() => {
+      setIsReadingComplete(true);
     });
   };
 
@@ -131,6 +140,8 @@ function App() {
     setDrawnIndices([]);
     setDailyCard(null);
     setDailyReading('');
+    setIsReadingComplete(false);
+    setIsDailyReadingComplete(false);
   };
 
   return (
@@ -178,6 +189,8 @@ function App() {
         {stage === 'reading' && (
           <ReadingDisplay
             reading={reading}
+            cards={drawnCards}
+            isReadingComplete={isReadingComplete}
             onReset={handleReset}
           />
         )}
@@ -188,6 +201,7 @@ function App() {
             card={dailyCard}
             reading={dailyReading}
             isShuffling={stage === 'daily-shuffling'}
+            isReadingComplete={isDailyReadingComplete}
             onReset={handleReset}
           />
         )}
