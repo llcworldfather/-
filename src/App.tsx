@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { TarotCard } from './data/cards';
 import { shuffleDeck, drawCardWithReversed } from './utils/tarot';
 import type { DrawnCard } from './utils/tarot';
 import { getTarotReading, getDailyCardReading } from './services/api';
+import { hasTodayDailyCard, getTodayDailyCard, saveTodayDailyCard, updateTodayDailyCardReading } from './utils/dailyCard';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Deck } from './components/Deck';
 import { CardReveal } from './components/CardReveal';
@@ -22,6 +23,9 @@ function App() {
   const [dailyCard, setDailyCard] = useState<DrawnCard | null>(null);
   const [dailyReading, setDailyReading] = useState('');
 
+  // 用于追踪每日解读是否完成，以便保存到 LocalStorage
+  const dailyReadingRef = useRef('');
+
   const handleStart = () => {
     if (!question.trim()) return;
     setStage('shuffling');
@@ -37,9 +41,23 @@ function App() {
 
   // 每日一牌处理
   const handleDailyCard = () => {
+    // 检查今天是否已经抽过牌
+    if (hasTodayDailyCard()) {
+      const cachedData = getTodayDailyCard();
+      if (cachedData) {
+        // 直接从缓存加载，跳过洗牌动画
+        setDailyCard(cachedData.card);
+        setDailyReading(cachedData.reading);
+        setStage('daily-revealing');
+        return;
+      }
+    }
+
+    // 今天还没抽过牌，走正常流程
     setStage('daily-shuffling');
     setDailyCard(null);
     setDailyReading('');
+    dailyReadingRef.current = '';
 
     setTimeout(() => {
       const shuffledDeck = shuffleDeck();
@@ -47,10 +65,19 @@ function App() {
       setDailyCard(card);
       setStage('daily-revealing');
 
+      // 先保存卡牌信息（解读内容稍后更新）
+      saveTodayDailyCard(card, '');
+
       // 延迟后开始获取解读
       setTimeout(() => {
         getDailyCardReading(card, (chunk) => {
-          setDailyReading(prev => prev + chunk);
+          setDailyReading(prev => {
+            const newReading = prev + chunk;
+            dailyReadingRef.current = newReading;
+            // 实时更新 LocalStorage
+            updateTodayDailyCardReading(newReading);
+            return newReading;
+          });
         });
       }, 1500);
     }, 2000);
