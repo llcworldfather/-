@@ -5,6 +5,7 @@ import type { DrawnCard } from '../utils/tarot';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { generateReadingImage, extractSummary, downloadImage } from '../utils/generateReadingImage';
+import { HolographicCard } from './HolographicCard';
 
 interface DailyCardRevealProps {
     card: DrawnCard | null;
@@ -104,77 +105,83 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                             <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_currentColor]"></span>
                         </motion.div>
 
-                        {/* Card */}
-                        <div
-                            className="relative w-56 h-80 md:w-64 md:h-96 perspective-1000 cursor-pointer"
-                            style={{ perspective: '1000px' }}
-                        >
-                            <motion.div
-                                className="w-full h-full relative"
-                                style={{ transformStyle: 'preserve-3d' }}
-                                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                                transition={{ duration: 0.8, ease: "easeInOut" }}
+                        {/* Card Component */}
+                        <HolographicCard className="w-56 h-80 md:w-64 md:h-96 mb-12">
+                            <div
+                                className="relative w-full h-full cursor-pointer"
+                                style={{ perspective: '1000px' }}
                             >
-                                {/* Card Back */}
-                                <div
-                                    className="absolute inset-0 rounded-xl shadow-2xl border-4 border-yellow-700/50 bg-slate-900 overflow-hidden"
-                                    style={{ backfaceVisibility: 'hidden' }}
+                                <motion.div
+                                    className="w-full h-full relative"
+                                    style={{ transformStyle: 'preserve-3d' }}
+                                    animate={{ rotateY: isFlipped ? 180 : 0 }}
+                                    transition={{ duration: 0.8, ease: "easeInOut" }}
                                 >
-                                    <div className="absolute inset-2 border border-yellow-600/30 rounded-lg flex items-center justify-center bg-[#1a0b2e]">
-                                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/40 via-transparent to-transparent opacity-50"></div>
-                                        <div className="w-full h-full opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="w-24 h-24 border-2 border-yellow-600/40 rotate-45 flex items-center justify-center">
-                                                <div className="w-16 h-16 border border-yellow-600/30 rotate-45"></div>
+                                    {/* Card Back */}
+                                    <div
+                                        className="absolute inset-0 rounded-xl shadow-2xl border-4 border-yellow-700/50 bg-slate-900 overflow-hidden"
+                                        style={{ backfaceVisibility: 'hidden' }}
+                                    >
+                                        <div className="absolute inset-2 border border-yellow-600/30 rounded-lg flex items-center justify-center bg-[#1a0b2e]">
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/40 via-transparent to-transparent opacity-50"></div>
+                                            <div className="w-full h-full opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <div className="w-24 h-24 border-2 border-yellow-600/40 rotate-45 flex items-center justify-center">
+                                                    <div className="w-16 h-16 border border-yellow-600/30 rotate-45"></div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Card Front */}
-                                <div
-                                    className="absolute inset-0 rounded-xl shadow-2xl border-4 border-yellow-700/50 bg-slate-900 overflow-hidden flex flex-col"
-                                    style={{
-                                        backfaceVisibility: 'hidden',
-                                        transform: 'rotateY(180deg)'
-                                    }}
-                                >
-                                    <div className="flex-1 relative overflow-hidden bg-black">
-                                        <img
-                                            src={card.image}
-                                            alt={card.name}
-                                            className={`w-full h-full object-fill ${card.isReversed ? 'rotate-180' : ''}`}
-                                        />
+                                    {/* Card Front */}
+                                    <div
+                                        className="absolute inset-0 rounded-xl shadow-2xl border-4 border-yellow-700/50 bg-slate-900 overflow-hidden flex flex-col holographic-idle-shimmer"
+                                        style={{
+                                            backfaceVisibility: 'hidden',
+                                            transform: 'rotateY(180deg)'
+                                        }}
+                                    >
+                                        <div className="flex-1 relative overflow-hidden bg-black">
+                                            <img
+                                                src={card.image}
+                                                alt={card.name}
+                                                className={`w-full h-full object-fill ${card.isReversed ? 'rotate-180' : ''}`}
+                                            />
+                                        </div>
+                                        <div className="h-16 bg-slate-950 border-t border-white/10 flex flex-col items-center justify-center text-center p-2">
+                                            <h2 className="text-lg font-serif text-yellow-100/90">{language === 'zh' ? card.nameCn : card.name}</h2>
+                                            <span className={`text-sm font-serif ${card.isReversed ? 'text-rose-400/80' : 'text-emerald-400/80'}`}>
+                                                {card.isReversed ? t('reversed', language) : t('upright', language)}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="h-16 bg-slate-950 border-t border-white/10 flex flex-col items-center justify-center text-center p-2">
-                                        <h2 className="text-lg font-serif text-yellow-100/90">{language === 'zh' ? card.nameCn : card.name}</h2>
-                                        <span className={`text-sm font-serif ${card.isReversed ? 'text-rose-400/80' : 'text-emerald-400/80'}`}>
-                                            {card.isReversed ? t('reversed', language) : t('upright', language)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </motion.div>
+                                </motion.div>
 
-                            {/* Glow Effect */}
-                            <div className="absolute inset-0 rounded-xl shadow-[0_0_60px_rgba(168,85,247,0.3)] pointer-events-none"></div>
-                        </div>
+                                {/* Glow Effect */}
+                                <div className="absolute inset-0 rounded-xl shadow-[0_0_60px_rgba(168,85,247,0.3)] pointer-events-none"></div>
+                            </div>
+                        </HolographicCard>
 
                         {/* Reading Display */}
                         {reading && (
                             <motion.div
-                                className="mt-8 w-full max-w-2xl"
+                                className="w-full max-w-2xl mt-24" // ★★★ 这里改成了 mt-24 (96px)，拉大间距 ★★★
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 1.5 }}
                             >
                                 <div className="relative bg-slate-900/70 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-purple-500/20 shadow-xl">
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                                        <div className="px-4 py-1 bg-gradient-to-r from-amber-600 to-purple-600 rounded-full">
-                                            <span className="text-xs font-serif tracking-widest text-white uppercase">{t('dailyInsight', language)}</span>
+                                    {/* Floating Pill Label */}
+                                    <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-10">
+                                        <div className="px-6 py-1.5 bg-gradient-to-r from-amber-600 to-purple-600 rounded-full shadow-[0_0_15px_rgba(217,119,6,0.3)] border border-amber-500/30">
+                                            <span className="text-xs font-serif tracking-widest text-white uppercase whitespace-nowrap drop-shadow-sm">
+                                                {t('dailyInsight', language)}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div className="max-w-none text-slate-200 leading-loose font-serif tracking-wide custom-markdown mt-4">
+                                    {/* Markdown Content */}
+                                    <div className="max-w-none text-slate-200 leading-loose font-serif tracking-wide custom-markdown pt-2">
                                         <ReactMarkdown
                                             components={{
                                                 h1: ({ node, ...props }) => <h1 className="text-2xl font-serif text-amber-200 mb-4 mt-6 border-b border-white/10 pb-2" {...props} />,
@@ -252,4 +259,3 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
         </div>
     );
 };
-

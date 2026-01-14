@@ -130,3 +130,56 @@
   pointer-events: none;
   animation: sparkle-out 0.8s ease-out forwards;
 }
+
+/* Holographic Card Effects */
+.holographic-card {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  transition: transform 0.1s ease-out;
+}
+
+.holographic-overlay {
+  transition: opacity 0.3s ease;
+}
+
+.holographic-shine {
+  transition: opacity 0.3s ease;
+}
+
+/* Rainbow shimmer animation keyframes */
+@keyframes holographic-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Subtle idle shimmer for cards when not interacting */
+.holographic-idle-shimmer {
+  position: relative;
+}
+
+.holographic-idle-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 55%,
+    transparent 70%
+  );
+  background-size: 300% 300%;
+  animation: holographic-shimmer 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.5;
+}
