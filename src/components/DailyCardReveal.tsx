@@ -109,7 +109,6 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                         <HolographicCard className="w-56 h-80 md:w-64 md:h-96 mb-12">
                             <div
                                 className="relative w-full h-full cursor-pointer"
-                                style={{ perspective: '1000px' }}
                             >
                                 <motion.div
                                     className="w-full h-full relative"

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, useSpring, useTransform } from 'framer-motion';
+import { motion, useSpring, useTransform, useMotionTemplate } from 'framer-motion';
 
 interface HolographicCardProps {
     children: React.ReactNode;
@@ -19,6 +19,9 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
     const rotateX = useSpring(0, { stiffness: 300, damping: 30 });
     const rotateY = useSpring(0, { stiffness: 300, damping: 30 });
 
+    // Create explicit transform string
+    const transform = useMotionTemplate`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
     // Transform rotation to gradient position for holographic effect
     const gradientX = useTransform(rotateY, [-20, 20], [0, 100]);
     const gradientY = useTransform(rotateX, [-20, 20], [100, 0]);
@@ -35,10 +38,16 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
         const centerY = rect.top + rect.height / 2;
 
         // Calculate rotation based on pointer position relative to center
-        // Limit rotation to ±20 degrees
-        const maxRotation = 20;
-        const rotateYValue = ((clientX - centerX) / (rect.width / 2)) * maxRotation;
-        const rotateXValue = -((clientY - centerY) / (rect.height / 2)) * maxRotation;
+        // We want the card to tilt TOWARD the pointer position
+        const maxRotation = 15;
+
+        // Mouse right of center = negative rotateY (right edge toward viewer)
+        // Mouse left of center = positive rotateY (left edge toward viewer)
+        const rotateYValue = -((clientX - centerX) / (rect.width / 2)) * maxRotation;
+
+        // Mouse above center = negative rotateX (top edge toward viewer)
+        // Mouse below center = positive rotateX (bottom edge toward viewer)
+        const rotateXValue = ((clientY - centerY) / (rect.height / 2)) * maxRotation;
 
         rotateX.set(Math.max(-maxRotation, Math.min(maxRotation, rotateXValue)));
         rotateY.set(Math.max(-maxRotation, Math.min(maxRotation, rotateYValue)));
@@ -86,9 +95,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
             className={`relative cursor-grab active:cursor-grabbing touch-none ${className}`}
             style={{
                 transformStyle: 'preserve-3d',
-                perspective: 1000,
-                rotateX,
-                rotateY,
+                transform,
             }}
             onPointerDown={handlePointerDown}
         >
