@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import type { DrawnCard } from '../utils/tarot';
+import { useLanguage } from '../context/LanguageContext';
+import { t } from '../i18n/translations';
 
 interface DailyCardRevealProps {
     card: DrawnCard | null;
@@ -16,6 +18,7 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
     isShuffling,
     onReset
 }) => {
+    const { language } = useLanguage();
     const [isFlipped, setIsFlipped] = useState(false);
 
     // Trigger flip after card flies in
@@ -70,7 +73,7 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                             </motion.div>
                         ))}
                         <div className="absolute top-full mt-8 w-full text-center">
-                            <p className="text-purple-300 font-serif tracking-widest animate-pulse">洗牌中...</p>
+                            <p className="text-purple-300 font-serif tracking-widest animate-pulse">{t('shuffling', language)}</p>
                         </div>
                     </motion.div>
                 )}
@@ -93,7 +96,7 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                             transition={{ delay: 0.5 }}
                         >
                             <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_currentColor]"></span>
-                            今日之牌
+                            {t('dailyCardTitle', language)}
                             <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_currentColor]"></span>
                         </motion.div>
 
@@ -140,9 +143,9 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                                         />
                                     </div>
                                     <div className="h-16 bg-slate-950 border-t border-white/10 flex flex-col items-center justify-center text-center p-2">
-                                        <h2 className="text-lg font-serif text-yellow-100/90">{card.nameCn}</h2>
+                                        <h2 className="text-lg font-serif text-yellow-100/90">{language === 'zh' ? card.nameCn : card.name}</h2>
                                         <span className={`text-sm font-serif ${card.isReversed ? 'text-rose-400/80' : 'text-emerald-400/80'}`}>
-                                            {card.isReversed ? '逆位' : '正位'}
+                                            {card.isReversed ? t('reversed', language) : t('upright', language)}
                                         </span>
                                     </div>
                                 </div>
@@ -163,7 +166,7 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                                 <div className="relative bg-slate-900/70 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-purple-500/20 shadow-xl">
                                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
                                         <div className="px-4 py-1 bg-gradient-to-r from-amber-600 to-purple-600 rounded-full">
-                                            <span className="text-xs font-serif tracking-widest text-white uppercase">今日启示</span>
+                                            <span className="text-xs font-serif tracking-widest text-white uppercase">{t('dailyInsight', language)}</span>
                                         </div>
                                     </div>
 
@@ -202,7 +205,7 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 2 }}
                                 >
-                                    返回
+                                    {t('backButton', language)}
                                 </motion.button>
                             </motion.div>
                         )}

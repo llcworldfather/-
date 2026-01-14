@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
+import { t } from '../i18n/translations';
 
 interface DeckProps {
     stage: 'shuffling' | 'drawing';
@@ -8,6 +10,7 @@ interface DeckProps {
 }
 
 export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) => {
+    const { language } = useLanguage();
     // Track if deck has been expanded on mobile (first touch/click expands, subsequent touches select)
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
     // Track if last interaction was touch to prevent double event firing
@@ -86,7 +89,7 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
                         </motion.div>
                     ))}
                     <div className="absolute top-full mt-8 w-full text-center">
-                        <p className="text-purple-300 font-serif tracking-widest animate-pulse">洗牌中...</p>
+                        <p className="text-purple-300 font-serif tracking-widest animate-pulse">{t('shuffling', language)}</p>
                     </div>
                 </div>
             )}

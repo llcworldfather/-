@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-
 import ReactMarkdown from 'react-markdown';
+import { useLanguage } from '../context/LanguageContext';
+import { t } from '../i18n/translations';
 
 interface ReadingDisplayProps {
     reading: string;
@@ -9,6 +10,8 @@ interface ReadingDisplayProps {
 }
 
 export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, onReset }) => {
+    const { language } = useLanguage();
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -19,7 +22,7 @@ export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, onReset
 
             <h2 className="text-4xl md:text-5xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-purple-100 to-amber-100 mb-10 flex items-center justify-center gap-4 drop-shadow-sm">
                 <span className="text-2xl text-amber-400 animate-pulse">✨</span>
-                星辰启示
+                {t('readingTitle', language)}
                 <span className="text-2xl text-amber-400 animate-pulse">✨</span>
             </h2>
 
@@ -51,7 +54,7 @@ export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, onReset
                 ) : (
                     <div className="flex flex-col items-center gap-4 text-purple-200/80 py-12">
                         <div className="w-12 h-12 rounded-full border-2 border-t-amber-400 border-r-transparent border-b-purple-400 border-l-transparent animate-spin"></div>
-                        <span className="tracking-widest animate-pulse">正在聆听宇宙的低语...</span>
+                        <span className="tracking-widest animate-pulse">{t('loading', language)}</span>
                     </div>
                 )}
             </div>
@@ -64,10 +67,11 @@ export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, onReset
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
                     <span className="flex items-center gap-3 text-sm uppercase tracking-[0.2em] text-slate-300 group-hover:text-amber-100 transition-colors">
                         <span className="transition-transform group-hover:-rotate-180 duration-500">🔮</span>
-                        探索新的命运
+                        {t('resetButton', language)}
                     </span>
                 </button>
             </div>
         </motion.div>
     );
 };
+

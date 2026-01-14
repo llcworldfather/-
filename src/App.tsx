@@ -4,16 +4,20 @@ import { shuffleDeck, drawCardWithReversed } from './utils/tarot';
 import type { DrawnCard } from './utils/tarot';
 import { getTarotReading, getDailyCardReading } from './services/api';
 import { hasTodayDailyCard, getTodayDailyCard, saveTodayDailyCard, updateTodayDailyCardReading } from './utils/dailyCard';
+import { useLanguage } from './context/LanguageContext';
+import { t } from './i18n/translations';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Deck } from './components/Deck';
 import { CardReveal } from './components/CardReveal';
 import { ReadingDisplay } from './components/ReadingDisplay';
 import { StarryBackground } from './components/StarryBackground';
 import { DailyCardReveal } from './components/DailyCardReveal';
+import { LanguageToggle } from './components/LanguageToggle';
 
 type Stage = 'welcome' | 'shuffling' | 'drawing' | 'revealing' | 'reading' | 'daily-shuffling' | 'daily-revealing';
 
 function App() {
+  const { language } = useLanguage();
   const [stage, setStage] = useState<Stage>('welcome');
   const [question, setQuestion] = useState('');
   const [deck, setDeck] = useState<TarotCard[]>([]);
@@ -70,7 +74,7 @@ function App() {
 
       // 延迟后开始获取解读
       setTimeout(() => {
-        getDailyCardReading(card, (chunk) => {
+        getDailyCardReading(card, language, (chunk) => {
           setDailyReading(prev => {
             const newReading = prev + chunk;
             dailyReadingRef.current = newReading;
@@ -114,7 +118,7 @@ function App() {
     setStage('reading');
 
     // Fetch reading with streaming
-    getTarotReading(question, drawnCards, (chunk) => {
+    getTarotReading(question, drawnCards, language, (chunk) => {
       setReading(prev => prev + chunk);
     });
   };
@@ -131,6 +135,9 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-slate-100 p-4 overflow-hidden relative font-serif">
+      {/* Language Toggle */}
+      <LanguageToggle />
+
       {/* Dynamic Background */}
       <StarryBackground />
 
@@ -149,8 +156,8 @@ function App() {
             {stage === 'drawing' && (
               <p className="mb-4 text-purple-200 text-lg tracking-widest animate-pulse">
                 {drawnCards.length < 3
-                  ? `请抽取你的第 ${drawnCards.length + 1} 张牌 (${drawnCards.length}/3)`
-                  : '命运之轮开始转动...'}
+                  ? t('drawPrompt', language, { n: drawnCards.length + 1, current: drawnCards.length })
+                  : t('drawComplete', language)}
               </p>
             )}
             <Deck
