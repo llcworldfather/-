@@ -1,13 +1,14 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Sun } from 'lucide-react';
 
 interface WelcomeScreenProps {
     question: string;
     setQuestion: (q: string) => void;
     onStart: () => void;
+    onDailyCard: () => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuestion, onStart }) => {
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuestion, onStart, onDailyCard }) => {
     return (
         <div className="space-y-12 animate-fade-in flex flex-col items-center w-full max-w-2xl px-6 relative z-10">
             {/* Title Section */}
@@ -28,7 +29,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuest
             </p>
 
             {/* Input Section */}
-            <div className="w-full space-y-8">
+            <div className="w-full space-y-4">
                 <div className="relative group">
                     <input
                         type="text"
@@ -58,7 +59,27 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuest
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                 </button>
+
+                {/* Daily Card Button */}
+                <button
+                    onClick={onDailyCard}
+                    className="w-full relative group overflow-hidden rounded-full py-3 px-6 transition-all duration-300"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-900/60 via-orange-800/60 to-amber-900/60 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+                    <div className="absolute inset-0 border border-amber-400/20 rounded-full group-hover:border-amber-400/50 transition-colors duration-300"></div>
+
+                    <span className="relative z-10 font-serif text-base tracking-[0.15em] text-amber-200 flex items-center justify-center gap-3 group-hover:gap-5 transition-all duration-300">
+                        <Sun className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:rotate-180 transition-all duration-700" />
+                        每日一牌
+                        <Sun className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:rotate-180 transition-all duration-700" />
+                    </span>
+
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-amber-200/10 to-transparent"></div>
+                </button>
             </div>
         </div>
     );
 };
+

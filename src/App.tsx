@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import type { TarotCard } from './data/cards';
 import { shuffleDeck, drawCardWithReversed } from './utils/tarot';
 import type { DrawnCard } from './utils/tarot';
-import { getTarotReading } from './services/api';
+import { getTarotReading, getDailyCardReading } from './services/api';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Deck } from './components/Deck';
 import { CardReveal } from './components/CardReveal';
 import { ReadingDisplay } from './components/ReadingDisplay';
 import { StarryBackground } from './components/StarryBackground';
+import { DailyCardReveal } from './components/DailyCardReveal';
 
-type Stage = 'welcome' | 'shuffling' | 'drawing' | 'revealing' | 'reading';
+type Stage = 'welcome' | 'shuffling' | 'drawing' | 'revealing' | 'reading' | 'daily-shuffling' | 'daily-revealing';
 
 function App() {
   const [stage, setStage] = useState<Stage>('welcome');
@@ -18,6 +19,8 @@ function App() {
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [reading, setReading] = useState('');
   const [drawnIndices, setDrawnIndices] = useState<number[]>([]);
+  const [dailyCard, setDailyCard] = useState<DrawnCard | null>(null);
+  const [dailyReading, setDailyReading] = useState('');
 
   const handleStart = () => {
     if (!question.trim()) return;
@@ -30,6 +33,27 @@ function App() {
       setDeck(shuffleDeck());
       setStage('drawing');
     }, 2500);
+  };
+
+  // 每日一牌处理
+  const handleDailyCard = () => {
+    setStage('daily-shuffling');
+    setDailyCard(null);
+    setDailyReading('');
+
+    setTimeout(() => {
+      const shuffledDeck = shuffleDeck();
+      const card = drawCardWithReversed(shuffledDeck[0]);
+      setDailyCard(card);
+      setStage('daily-revealing');
+
+      // 延迟后开始获取解读
+      setTimeout(() => {
+        getDailyCardReading(card, (chunk) => {
+          setDailyReading(prev => prev + chunk);
+        });
+      }, 1500);
+    }, 2000);
   };
 
   // Watch for 3 cards drawn to trigger transition
@@ -74,6 +98,8 @@ function App() {
     setReading('');
     setDrawnCards([]);
     setDrawnIndices([]);
+    setDailyCard(null);
+    setDailyReading('');
   };
 
   return (
@@ -87,6 +113,7 @@ function App() {
             question={question}
             setQuestion={setQuestion}
             onStart={handleStart}
+            onDailyCard={handleDailyCard}
           />
         )}
 
@@ -120,9 +147,20 @@ function App() {
             onReset={handleReset}
           />
         )}
+
+        {/* Daily Card Flow */}
+        {(stage === 'daily-shuffling' || stage === 'daily-revealing') && (
+          <DailyCardReveal
+            card={dailyCard}
+            reading={dailyReading}
+            isShuffling={stage === 'daily-shuffling'}
+            onReset={handleReset}
+          />
+        )}
       </main>
     </div>
   );
 }
 
 export default App;
+

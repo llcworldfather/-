@@ -97,3 +97,91 @@ export async function getTarotReading(
         onChunk("\n\n[灵界静默：连接断开，请稍后再试]");
     }
 }
+
+// 每日一牌专属解读
+export async function getDailyCardReading(
+    card: DrawnCard,
+    onChunk: (chunk: string) => void
+): Promise<void> {
+    const orientation = card.isReversed ? '逆位' : '正位';
+    const cardDescription = `${card.nameCn} (${card.name}) - ${orientation}`;
+
+    if (!API_KEY) {
+        console.warn('Deepseek API Key is missing. Using mock response.');
+        const mockResponse = `(模拟回应) 今日之牌：${cardDescription}\n\n这张牌为你今日带来的启示是... [请配置 VITE_DEEPSEEK_API_KEY 以获取真实解读]`;
+
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < mockResponse.length) {
+                onChunk(mockResponse[i]);
+                i++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 30);
+        return;
+    }
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一位神秘而智慧的塔罗牌占卜师，专门提供每日一牌解读。请根据用户抽到的这张牌，为ta解读今日的运势和启示。语言风格要神秘、温暖且富有启发性。内容应包含：1. 这张牌的核心含义 2. 今日的指引和建议 3. 需要注意的事项 4. 一句鼓励的话语。请用中文回答，篇幅适中。'
+                    },
+                    {
+                        role: 'user',
+                        content: `今日抽到的牌是：${cardDescription}\n请为我解读今日启示。`
+                    }
+                ],
+                stream: true
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) throw new Error('Response body is unavailable');
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') return;
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.choices[0]?.delta?.content || '';
+                        if (content) {
+                            onChunk(content);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing SSE message:', e);
+                    }
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Failed to fetch daily reading:', error);
+        onChunk("\n\n[灵界静默：连接断开，请稍后再试]");
+    }
+}
+
