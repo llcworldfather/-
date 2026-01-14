@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { TarotCard } from '../data/cards';
+import type { DrawnCard } from '../utils/tarot';
 
 interface CardRevealProps {
-    cards: TarotCard[];
+    cards: DrawnCard[];
     onComplete: () => void;
 }
 
@@ -43,12 +43,15 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
                                         <img
                                             src={card.image}
                                             alt={card.name}
-                                            className="w-full h-full object-fill opacity-0 animate-[fade-in_1s_ease_forwards]"
+                                            className={`w-full h-full object-fill opacity-0 animate-[fade-in_1s_ease_forwards] ${card.isReversed ? 'rotate-180' : ''}`}
                                             style={{ animationDelay: `${1 + index * 0.5}s` }}
                                         />
                                     </div>
-                                    <div className="h-12 bg-slate-950 border-t border-white/10 flex flex-col items-center justify-center text-center p-1">
+                                    <div className="h-14 bg-slate-950 border-t border-white/10 flex flex-col items-center justify-center text-center p-1">
                                         <h2 className="text-base font-serif text-yellow-100/90">{card.nameCn}</h2>
+                                        <span className={`text-xs font-serif ${card.isReversed ? 'text-rose-400/80' : 'text-emerald-400/80'}`}>
+                                            {card.isReversed ? '逆位' : '正位'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -69,3 +72,4 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
         </div>
     );
 };
+

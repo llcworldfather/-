@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { TarotCard } from './data/cards';
-import { shuffleDeck } from './utils/tarot';
+import { shuffleDeck, drawCardWithReversed } from './utils/tarot';
+import type { DrawnCard } from './utils/tarot';
 import { getTarotReading } from './services/api';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Deck } from './components/Deck';
@@ -14,7 +15,7 @@ function App() {
   const [stage, setStage] = useState<Stage>('welcome');
   const [question, setQuestion] = useState('');
   const [deck, setDeck] = useState<TarotCard[]>([]);
-  const [drawnCards, setDrawnCards] = useState<TarotCard[]>([]);
+  const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [reading, setReading] = useState('');
   const [drawnIndices, setDrawnIndices] = useState<number[]>([]);
 
@@ -53,7 +54,8 @@ function App() {
     setDrawnCards(prev => {
       if (prev.length >= 3) return prev;
       const newCard = deck[prev.length];
-      return newCard ? [...prev, newCard] : prev;
+      // 抽牌时随机决定正逆位
+      return newCard ? [...prev, drawCardWithReversed(newCard)] : prev;
     });
   };
 

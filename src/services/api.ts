@@ -1,5 +1,4 @@
-
-import type { TarotCard } from '../data/cards';
+import type { DrawnCard } from '../utils/tarot';
 
 const API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || '';
 const API_URL = 'https://api.deepseek.com/chat/completions';
@@ -10,17 +9,18 @@ export async function checkApiKey(): Promise<boolean> {
 
 export async function getTarotReading(
     question: string,
-    cards: TarotCard[],
+    cards: DrawnCard[],
     onChunk: (chunk: string) => void
 ): Promise<void> { // Changed return type to void as we use callback
     const cardDescriptions = cards.map((card, index) => {
         const position = ['过去', '现在', '未来'][index];
-        return `${position}: ${card.nameCn} (${card.name})`;
+        const orientation = card.isReversed ? '逆位' : '正位';
+        return `${position}: ${card.nameCn} (${card.name}) - ${orientation}`;
     }).join('\n');
 
     if (!API_KEY) {
         console.warn('Deepseek API Key is missing. Using mock response.');
-        const mockResponse = `(模拟回应) 塔罗牌感应到了关于“${question}”的能量...\n\n${cardDescriptions}\n\n这些牌象征着... [请配置 VITE_DEEPSEEK_API_KEY 以获取真实解读]`;
+        const mockResponse = `(模拟回应) 塔罗牌感应到了关于"${question}"的能量...\n\n${cardDescriptions}\n\n这些牌象征着... [请配置 VITE_DEEPSEEK_API_KEY 以获取真实解读]`;
 
         // Simulate streaming for mock response
         let i = 0;

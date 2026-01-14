@@ -6,6 +6,7 @@ export interface TarotCard {
     suit?: 'wands' | 'cups' | 'swords' | 'pentacles';
     number: number;
     image: string;
+    isReversed?: boolean;
 }
 
 const majorArcana: Omit<TarotCard, 'type' | 'id' | 'image'>[] = [
