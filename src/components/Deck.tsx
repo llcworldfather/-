@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 interface DeckProps {
@@ -8,6 +8,47 @@ interface DeckProps {
 }
 
 export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) => {
+    // Track if deck has been expanded on mobile (first touch/click expands, subsequent touches select)
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+    // Track if last interaction was touch to prevent double event firing
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    // Handle touch events for mobile - first touch expands, subsequent touches select cards
+    const handleCardTouchEnd = useCallback((index: number, e: React.TouchEvent) => {
+        e.preventDefault(); // Prevent click event from also firing
+        setIsTouchDevice(true); // Mark as touch device to prevent onClick from firing
+
+        if (drawnIndices.includes(index) || drawnIndices.length >= 3) return;
+
+        if (!isMobileExpanded) {
+            // First touch: just expand the deck, don't select a card
+            setIsMobileExpanded(true);
+            return;
+        }
+
+        // Subsequent touches: select the card
+        onDraw(index);
+    }, [isMobileExpanded, drawnIndices, onDraw]);
+
+    // Handle click events - works for both desktop and mobile fallback
+    const handleCardClick = useCallback((index: number) => {
+        // If touch event already handled this interaction, skip
+        if (isTouchDevice) return;
+
+        if (drawnIndices.includes(index) || drawnIndices.length >= 3) return;
+
+        // For devices without hover (detected by checking if this is a touch-capable device without mouse)
+        // Check if we need to expand first
+        const isTouchCapable = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isTouchCapable && !isMobileExpanded) {
+            // First click on touch device: just expand the deck
+            setIsMobileExpanded(true);
+            return;
+        }
+
+        // Desktop with hover or already expanded: select the card
+        onDraw(index);
+    }, [isTouchDevice, drawnIndices, isMobileExpanded, onDraw]);
     return (
         <div className="relative w-full h-[500px] flex items-center justify-center perspective-1000">
             {stage === 'shuffling' && (
@@ -51,7 +92,7 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
             )}
 
             {stage === 'drawing' && (
-                <div className="flex justify-center -space-x-48 hover:-space-x-32 transition-all duration-500 px-4">
+                <div className={`flex justify-center transition-all duration-500 px-4 ${isMobileExpanded ? '-space-x-32' : '-space-x-48 hover:-space-x-32'}`}>
                     {[...Array(22)].map((_, i) => (
                         <motion.div
                             key={i}
@@ -70,7 +111,8 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
                                 ease: drawnIndices.includes(i) ? [0.4, 0, 0.2, 1] : "easeInOut",
                                 delay: drawnIndices.includes(i) ? 0 : i * 0.02
                             }}
-                            onClick={() => !drawnIndices.includes(i) && drawnIndices.length < 3 && onDraw(i)}
+                            onClick={() => handleCardClick(i)}
+                            onTouchEnd={(e) => handleCardTouchEnd(i, e)}
                             whileHover={{ scale: 1.05, zIndex: 100 }}
                         >
                             {/* Selection Flash - Bright Glow Effect */}
