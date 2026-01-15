@@ -1,28 +1,28 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+// Vercel Edge Function for streaming Gemini API responses
+export const config = {
+    runtime: 'edge',
+};
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBf1C7yP74N6lps0JD3tcWL9vIkNv3EG8I';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(request: Request) {
     // Only allow POST requests
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    // Enable CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+    if (request.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 
     try {
-        const { imageBase64, mimeType, language } = req.body;
+        const { imageBase64, mimeType, language } = await request.json();
 
         if (!imageBase64 || !mimeType) {
-            return res.status(400).json({ error: 'Missing imageBase64 or mimeType' });
+            return new Response(JSON.stringify({ error: 'Missing imageBase64 or mimeType' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
         }
 
         const systemPrompt = language === 'zh'
@@ -59,14 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 ## 💊 宇宙处方笺 (Daily Memo)
 (一句简短有力的毒鸡汤/废话文学)`
             : `# Role
-You are a Cyber Tarot Master majoring in "Internet Abstract Psychology." Your specialty is interpreting user images through "serious nonsense" and "forced connections."
-
-# Task
-User uploads an image. Follow these steps:
-1. First Impression Roast - directly roast or meme the content
-2. Forced Tarot - force-connect it to a tarot card
-3. Absurd Fortune - specific and funny predictions
-4. Daily Memo - savage or useless advice
+You are a Cyber Tarot Master. Interpret images through "serious nonsense" and memes.
 
 # Output Format (Markdown)
 ## ⚡ Cyber Vision (Vibe Check)
@@ -79,7 +72,7 @@ User uploads an image. Follow these steps:
             : 'Please use your cyber tarot powers to give me an abstract reading of this image!';
 
         // Call Gemini API with streaming
-        const response = await fetch(`${GEMINI_API_URL}?alt=sse&key=${GEMINI_API_KEY}`, {
+        const geminiResponse = await fetch(`${GEMINI_API_URL}?alt=sse&key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -104,41 +97,29 @@ User uploads an image. Follow these steps:
             })
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
+        if (!geminiResponse.ok) {
+            const errorText = await geminiResponse.text();
             console.error('Gemini API Error:', errorText);
-            return res.status(response.status).json({ error: 'Gemini API error', details: errorText });
+            return new Response(JSON.stringify({ error: 'Gemini API error', details: errorText }), {
+                status: geminiResponse.status,
+                headers: { 'Content-Type': 'application/json' },
+            });
         }
 
-        // Set up streaming response
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-
-        const reader = response.body?.getReader();
-        if (!reader) {
-            return res.status(500).json({ error: 'Failed to get response stream' });
-        }
-
-        const decoder = new TextDecoder();
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                // Forward the chunk to client
-                res.write(chunk);
-            }
-        } finally {
-            reader.releaseLock();
-        }
-
-        res.end();
+        // Stream the response directly to the client
+        return new Response(geminiResponse.body, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
+        });
 
     } catch (error) {
         console.error('API Error:', error);
-        return res.status(500).json({ error: 'Internal server error', message: String(error) });
+        return new Response(JSON.stringify({ error: 'Internal server error', message: String(error) }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 }
