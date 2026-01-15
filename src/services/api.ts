@@ -607,7 +607,8 @@ Give a "cyber breakdown" style interpretation.
 }
 
 // Image divination - calls our Vercel API proxy in production, or directly in development
-const GEMINI_API_KEY = 'AIzaSyBf1C7yP74N6lps0JD3tcWL9vIkNv3EG8I';
+// API Key should be set in .env file as VITE_GEMINI_API_KEY (for local dev only)
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 export async function getImageDivination(
     imageBase64: string,
