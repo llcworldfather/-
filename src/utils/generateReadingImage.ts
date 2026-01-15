@@ -38,6 +38,149 @@ async function drawBackground(ctx: CanvasRenderingContext2D, width: number, heig
     }
 }
 
+// Draw decorative border with moon and geometric patterns
+function drawDecorativeBorder(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+    const borderColor = 'rgba(212, 175, 55, 0.6)'; // Gold color
+    const borderColorLight = 'rgba(212, 175, 55, 0.3)';
+    const margin = 25;
+
+    ctx.save();
+
+    // --- Outer frame lines ---
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 2;
+
+    // Outer rectangle
+    ctx.beginPath();
+    ctx.roundRect(margin, margin, width - margin * 2, height - margin * 2, 15);
+    ctx.stroke();
+
+    // Inner rectangle (slightly inset)
+    ctx.strokeStyle = borderColorLight;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(margin + 8, margin + 8, width - margin * 2 - 16, height - margin * 2 - 16, 12);
+    ctx.stroke();
+
+    // --- Corner decorations ---
+    const cornerSize = 60;
+
+    // Draw corner ornaments (all four corners)
+    drawCornerOrnament(ctx, margin + 5, margin + 5, cornerSize, borderColor); // Top-left
+    drawCornerOrnament(ctx, width - margin - 5, margin + 5, cornerSize, borderColor, true, false); // Top-right
+    drawCornerOrnament(ctx, margin + 5, height - margin - 5, cornerSize, borderColor, false, true); // Bottom-left
+    drawCornerOrnament(ctx, width - margin - 5, height - margin - 5, cornerSize, borderColor, true, true); // Bottom-right
+
+    // --- Moon crescents on sides ---
+    // Left side moon
+    drawMoonCrescent(ctx, margin + 30, height / 2, 20, borderColor);
+    // Right side moon (mirrored)
+    drawMoonCrescent(ctx, width - margin - 30, height / 2, 20, borderColor, true);
+
+    // --- Star decorations ---
+    // Scatter some small stars in corners
+    drawStar(ctx, margin + 70, margin + 70, 6, borderColorLight);
+    drawStar(ctx, width - margin - 70, margin + 70, 6, borderColorLight);
+    drawStar(ctx, margin + 70, height - margin - 70, 6, borderColorLight);
+    drawStar(ctx, width - margin - 70, height - margin - 70, 6, borderColorLight);
+
+    ctx.restore();
+}
+
+// Draw a corner ornament (geometric L-shape with circle)
+function drawCornerOrnament(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    size: number,
+    color: string,
+    flipX: boolean = false,
+    flipY: boolean = false
+): void {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 1.5;
+
+    const dx = flipX ? -1 : 1;
+    const dy = flipY ? -1 : 1;
+
+    // L-shaped lines
+    ctx.beginPath();
+    ctx.moveTo(x, y + dy * size);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x + dx * size, y);
+    ctx.stroke();
+
+    // Small circle at corner
+    ctx.beginPath();
+    ctx.arc(x + dx * 15, y + dy * 15, 4, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Decorative diamond
+    ctx.beginPath();
+    ctx.moveTo(x + dx * 30, y);
+    ctx.lineTo(x + dx * 35, y + dy * 5);
+    ctx.lineTo(x + dx * 30, y + dy * 10);
+    ctx.lineTo(x + dx * 25, y + dy * 5);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+// Draw a moon crescent
+function drawMoonCrescent(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    radius: number,
+    color: string,
+    mirror: boolean = false
+): void {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = 'rgba(212, 175, 55, 0.15)';
+    ctx.lineWidth = 1.5;
+
+    ctx.beginPath();
+    if (mirror) {
+        ctx.arc(x, y, radius, -Math.PI * 0.7, Math.PI * 0.7);
+        ctx.arc(x + radius * 0.4, y, radius * 0.8, Math.PI * 0.7, -Math.PI * 0.7, true);
+    } else {
+        ctx.arc(x, y, radius, Math.PI * 0.3, -Math.PI * 0.3);
+        ctx.arc(x - radius * 0.4, y, radius * 0.8, -Math.PI * 0.3, Math.PI * 0.3, true);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+// Draw a simple star
+function drawStar(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string): void {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+        const angle = (i * Math.PI) / 2;
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size);
+    }
+    ctx.stroke();
+
+    // Small center dot
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
 // Draw a single tarot card
 async function drawCard(
     ctx: CanvasRenderingContext2D,
@@ -208,6 +351,9 @@ export async function generateReadingImage(options: GenerateImageOptions): Promi
 
     // 1. Draw background
     await drawBackground(ctx, width, height);
+
+    // 2. Draw decorative border
+    drawDecorativeBorder(ctx, width, height);
 
     // --- Title Configuration ---
     const title = language === 'zh'
