@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, useSpring, useTransform, useMotionTemplate } from 'framer-motion';
 
+
 interface HolographicCardProps {
     children: React.ReactNode;
     className?: string;
@@ -14,6 +15,8 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
 }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isPressed, setIsPressed] = useState(false);
+    const [isGyroActive, setIsGyroActive] = useState(false);
+    const [gyroPermissionNeeded, setGyroPermissionNeeded] = useState(false);
 
     // Spring values for smooth animation
     const rotateX = useSpring(0, { stiffness: 300, damping: 30 });
@@ -29,6 +32,72 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
     // Transform rotation to shine position
     const shineX = useTransform(rotateY, [-20, 20], [-50, 150]);
     const shineY = useTransform(rotateX, [-20, 20], [150, -50]);
+
+    // Handle device orientation for gyroscope effect
+    const handleDeviceOrientation = useCallback((event: DeviceOrientationEvent) => {
+        const { beta, gamma } = event;
+        if (beta === null || gamma === null) return;
+
+        const maxRotation = 15;
+
+        // beta: front-to-back tilt (-180 to 180), we use a portion for natural feel
+        // gamma: left-to-right tilt (-90 to 90)
+        // Divide by 4 to get a subtle, comfortable range
+        const rotateXValue = Math.max(-maxRotation, Math.min(maxRotation, (beta - 45) / 4));
+        const rotateYValue = Math.max(-maxRotation, Math.min(maxRotation, gamma / 4));
+
+        rotateX.set(rotateXValue);
+        rotateY.set(rotateYValue);
+    }, [rotateX, rotateY]);
+
+    // Request gyroscope permission (needed for iOS 13+)
+    const requestGyroPermission = useCallback(async () => {
+        const DeviceOrientationEventiOS = DeviceOrientationEvent as unknown as {
+            requestPermission?: () => Promise<'granted' | 'denied'>;
+        };
+
+        if (typeof DeviceOrientationEventiOS.requestPermission === 'function') {
+            try {
+                const permission = await DeviceOrientationEventiOS.requestPermission();
+                if (permission === 'granted') {
+                    window.addEventListener('deviceorientation', handleDeviceOrientation);
+                    setIsGyroActive(true);
+                    setGyroPermissionNeeded(false);
+                }
+            } catch (error) {
+                console.error('Gyroscope permission denied:', error);
+            }
+        }
+    }, [handleDeviceOrientation]);
+
+    // Initialize gyroscope on mount
+    useEffect(() => {
+        if (disabled) return;
+
+        // Check if device supports DeviceOrientation
+        if (!window.DeviceOrientationEvent) return;
+
+        // Check if this is a touch device (likely mobile)
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (!isTouchDevice) return;
+
+        const DeviceOrientationEventiOS = DeviceOrientationEvent as unknown as {
+            requestPermission?: () => Promise<'granted' | 'denied'>;
+        };
+
+        // iOS 13+ requires permission request on user interaction
+        if (typeof DeviceOrientationEventiOS.requestPermission === 'function') {
+            setGyroPermissionNeeded(true);
+        } else {
+            // Android and other platforms - just add listener
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+            setIsGyroActive(true);
+        }
+
+        return () => {
+            window.removeEventListener('deviceorientation', handleDeviceOrientation);
+        };
+    }, [disabled, handleDeviceOrientation]);
 
     const updateRotation = useCallback((clientX: number, clientY: number) => {
         if (!cardRef.current) return;
@@ -53,8 +122,10 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
         rotateY.set(Math.max(-maxRotation, Math.min(maxRotation, rotateYValue)));
     }, [rotateX, rotateY]);
 
-    // Use global pointer move event for better tracking
+    // Use global pointer move event for better tracking (desktop mode)
     useEffect(() => {
+        // Skip pointer tracking if gyroscope is active
+        if (isGyroActive) return;
         if (!isPressed || disabled) return;
 
         const handleGlobalPointerMove = (e: PointerEvent) => {
@@ -76,14 +147,24 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
             window.removeEventListener('pointerup', handleGlobalPointerUp);
             window.removeEventListener('pointercancel', handleGlobalPointerUp);
         };
-    }, [isPressed, disabled, updateRotation, rotateX, rotateY]);
+    }, [isPressed, disabled, isGyroActive, updateRotation, rotateX, rotateY]);
 
     const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         if (disabled) return;
+
+        // If iOS needs permission, request it on first tap
+        if (gyroPermissionNeeded) {
+            requestGyroPermission();
+            return;
+        }
+
+        // Skip pointer interaction if gyroscope is active
+        if (isGyroActive) return;
+
         e.preventDefault(); // Prevent text selection and other default behaviors
         setIsPressed(true);
         updateRotation(e.clientX, e.clientY);
-    }, [disabled, updateRotation]);
+    }, [disabled, gyroPermissionNeeded, isGyroActive, requestGyroPermission, updateRotation]);
 
     if (disabled) {
         return <div className={className}>{children}</div>;
@@ -108,7 +189,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
             <motion.div
                 className="holographic-overlay pointer-events-none absolute inset-0 rounded-xl z-20"
                 style={{
-                    opacity: isPressed ? 0.7 : 0,
+                    opacity: (isPressed || isGyroActive) ? 0.7 : 0,
                     backgroundImage: `linear-gradient(
                         115deg,
                         transparent 0%,
@@ -130,7 +211,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
             <motion.div
                 className="holographic-shine pointer-events-none absolute inset-0 rounded-xl z-30 overflow-hidden"
                 style={{
-                    opacity: isPressed ? 1 : 0,
+                    opacity: (isPressed || isGyroActive) ? 1 : 0,
                 }}
             >
                 <motion.div
@@ -154,7 +235,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
             <motion.div
                 className="pointer-events-none absolute inset-0 rounded-xl z-10"
                 style={{
-                    opacity: isPressed ? 1 : 0,
+                    opacity: (isPressed || isGyroActive) ? 1 : 0,
                     boxShadow: `
                         0 0 20px rgba(255, 0, 128, 0.4),
                         0 0 40px rgba(0, 255, 255, 0.3),

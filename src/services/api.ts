@@ -605,3 +605,177 @@ Give a "cyber breakdown" style interpretation.
         onChunk(errorMessage);
     }
 }
+
+// Image divination - calls our Vercel API proxy in production, or directly in development
+const GEMINI_API_KEY = 'AIzaSyBf1C7yP74N6lps0JD3tcWL9vIkNv3EG8I';
+
+export async function getImageDivination(
+    imageBase64: string,
+    mimeType: string,
+    language: Language,
+    onChunk: (chunk: string) => void
+): Promise<void> {
+    // In production, use the API proxy; in development, call Gemini directly
+    const isDev = import.meta.env.DEV;
+
+    const systemPrompt = language === 'zh'
+        ? `# Role
+你是一位主修"互联网抽象心理学"的赛博塔罗大师。你的特长并非预知未来，而是通过"一本正经地胡说八道"和"强行关联"来解读用户的图片。你不仅拥有透视眼，还有一张"互联网嘴替"的毒舌，擅长使用网络热梗、表情包语言、发疯文学和反鸡汤（毒鸡汤）。
+
+# Tone & Style
+- **拒绝文艺**：不要写"浓郁的能量"、"灵魂深处"这种矫情的词。要用"这图哪怕是看一眼都觉得炸裂"、"这明明是打工人的真实写照"。
+- **网感拉满**：熟练使用诸如：摸鱼、破防、显眼包、纯爱战神、脆皮大学生、该吃药了、绝绝子（带讽刺意味）、水逆退散等词汇。
+- **阴阳怪气**：用最礼貌的语气说最扎心的话，或者用最离谱的逻辑得出最合理的结论。
+- **赛博玄学**：把生活琐事上升到宇宙维度，比如把"想吃夜宵"解读为"来自高维度的能量补给需求"。
+
+# Task
+用户上传一张图片（万物皆可占卜）。请按以下步骤进行"抽象解读"：
+
+1.  **第一眼吐槽 (灵视扫描)**：不要描述画面！直接对画面内容进行"神吐槽"或"玩梗"。
+2.  **强行塔罗 (万物皆牌)**：不管图里是什么，强行关联到一张塔罗牌（或捏造一张牌）。
+3.  **离谱运势 (玄学预测)**：给出的运势必须具体且好笑，紧扣当代年轻人的痛点。
+4.  **今日宜忌 (毒鸡汤)**：给一句看似有哲理实则"废话"或者"扎心"的建议。
+
+# Output Format (Markdown)
+
+## ⚡ 赛博灵视 (Vibe Check)
+(这里放你对图片的抽象吐槽，必须带梗，语气要夸张)
+
+## 🃏 强行解牌 (Tarot Reading)
+**【关联牌面】：** (捏造或强行关联一张牌)
+**【牌义口胡】：** (一本正经地瞎扯)
+
+## 🔮 明日运势 (Fortune)
+* **💼 搬砖运**：(关于工作/学习的扎心预测)
+* **💘 桃花运**：(关于感情的毒舌预测)
+
+## 💊 宇宙处方笺 (Daily Memo)
+(一句简短有力的毒鸡汤/废话文学)`
+        : `# Role
+You are a Cyber Tarot Master. Interpret images through "serious nonsense" and memes.
+
+# Output Format (Markdown)
+## ⚡ Cyber Vision (Vibe Check)
+## 🃏 Forced Reading (Tarot BS)
+## 🔮 Tomorrow's Fortune
+## 💊 Cosmic Prescription (Daily Memo)`;
+
+    const userPrompt = language === 'zh'
+        ? '请根据我上传的这张图片，用你的赛博塔罗之力进行抽象解读！'
+        : 'Please use your cyber tarot powers to give me an abstract reading of this image!';
+
+    try {
+        let response: Response;
+
+        if (isDev) {
+            // Development: call Gemini directly (requires VPN in China)
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: systemPrompt + '\n\n' + userPrompt },
+                            { inline_data: { mime_type: mimeType, data: imageBase64 } }
+                        ]
+                    }],
+                    generationConfig: { temperature: 1.2, topP: 0.95, maxOutputTokens: 2048 }
+                })
+            });
+        } else {
+            // Production: use Vercel API proxy (no VPN needed)
+            response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64, mimeType, language })
+            });
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', errorText);
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) throw new Error('Response body is unavailable');
+
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Process complete SSE messages
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue;
+
+                // Handle SSE data format
+                if (trimmedLine.startsWith('data: ')) {
+                    const data = trimmedLine.slice(6);
+                    if (data === '[DONE]') return;
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        if (text) {
+                            onChunk(text);
+                        }
+                    } catch {
+                        // Try parsing as raw JSON (non-SSE format)
+                        try {
+                            const parsed = JSON.parse(trimmedLine);
+                            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                            if (text) {
+                                onChunk(text);
+                            }
+                        } catch {
+                            // Ignore parse errors for incomplete chunks
+                        }
+                    }
+                } else {
+                    // Try parsing as raw JSON line
+                    try {
+                        const parsed = JSON.parse(trimmedLine);
+                        const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        if (text) {
+                            onChunk(text);
+                        }
+                    } catch {
+                        // Ignore parse errors
+                    }
+                }
+            }
+        }
+
+        // Process any remaining buffer
+        if (buffer.trim()) {
+            try {
+                const data = buffer.startsWith('data: ') ? buffer.slice(6) : buffer;
+                const parsed = JSON.parse(data);
+                const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                if (text) {
+                    onChunk(text);
+                }
+            } catch {
+                // Ignore final parse errors
+            }
+        }
+
+    } catch (error) {
+        console.error('Failed to fetch image divination:', error);
+        const errorMessage = language === 'zh'
+            ? "\n\n[水晶球暂时蒙尘，请稍后再试 🔮]"
+            : "\n\n[The crystal ball is cloudy, please try again later 🔮]";
+        onChunk(errorMessage);
+    }
+}
+

@@ -13,9 +13,10 @@ import { ReadingDisplay } from './components/ReadingDisplay';
 import { StarryBackground } from './components/StarryBackground';
 import { DailyCardReveal } from './components/DailyCardReveal';
 import { LanguageToggle } from './components/LanguageToggle';
+import { ImageDivination } from './components/ImageDivination';
 import { Analytics } from '@vercel/analytics/react';
 
-type Stage = 'welcome' | 'shuffling' | 'drawing' | 'revealing' | 'reading' | 'daily-shuffling' | 'daily-revealing';
+type Stage = 'welcome' | 'shuffling' | 'drawing' | 'revealing' | 'reading' | 'daily-shuffling' | 'daily-revealing' | 'image-divination';
 
 function App() {
   const { language } = useLanguage();
@@ -100,6 +101,11 @@ function App() {
     }, 2000);
   };
 
+  // 图片占卜处理
+  const handleImageDivination = () => {
+    setStage('image-divination');
+  };
+
   // Watch for 3 cards drawn to trigger transition
   useEffect(() => {
     if (drawnCards.length === 3 && stage === 'drawing') {
@@ -181,6 +187,7 @@ function App() {
             setQuestion={setQuestion}
             onStart={handleStart}
             onDailyCard={handleDailyCard}
+            onImageDivination={handleImageDivination}
           />
         )}
 
@@ -226,6 +233,11 @@ function App() {
             isReadingComplete={isDailyReadingComplete}
             onReset={handleReset}
           />
+        )}
+
+        {/* Image Divination */}
+        {stage === 'image-divination' && (
+          <ImageDivination onReset={handleReset} />
         )}
       </main>
       <Analytics />

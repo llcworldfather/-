@@ -34,7 +34,12 @@ type TranslationKey =
     | 'roasting'
     | 'roastTitle'
     // Crazy Feature
-    | 'crazyButton';
+    | 'crazyButton'
+    // Image Divination
+    | 'imageDivinationButton'
+    | 'imageDivinationTitle'
+    | 'uploadImagePrompt'
+    | 'startDivination';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
     zh: {
@@ -71,7 +76,12 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         roasting: '锐评生成中...',
         roastTitle: '毒舌锐评',
         // Crazy Feature
-        crazyButton: '🌀 发疯文学'
+        crazyButton: '🌀 发疯文学',
+        // Image Divination
+        imageDivinationButton: '万物皆可占卜',
+        imageDivinationTitle: '图像占卜',
+        uploadImagePrompt: '上传一张图片，让塔罗牌解读你的明日运势',
+        startDivination: '开始占卜'
     },
     en: {
         // Welcome Screen
@@ -107,7 +117,12 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         roasting: 'Roasting...',
         roastTitle: 'Roast Reading',
         // Crazy Feature
-        crazyButton: '🌀 Chaos'
+        crazyButton: '🌀 Chaos',
+        // Image Divination
+        imageDivinationButton: 'Divine Anything',
+        imageDivinationTitle: 'Image Divination',
+        uploadImagePrompt: 'Upload an image and let the tarot reveal your tomorrow',
+        startDivination: 'Start Divination'
     }
 };
 

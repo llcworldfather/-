@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Sun } from 'lucide-react';
+import { Sparkles, Sun, Camera } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 
@@ -8,9 +8,10 @@ interface WelcomeScreenProps {
     setQuestion: (q: string) => void;
     onStart: () => void;
     onDailyCard: () => void;
+    onImageDivination: () => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuestion, onStart, onDailyCard }) => {
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuestion, onStart, onDailyCard, onImageDivination }) => {
     const { language } = useLanguage();
 
     return (
@@ -84,6 +85,25 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ question, setQuest
 
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-amber-200/10 to-transparent"></div>
+                </button>
+
+                {/* Image Divination Button */}
+                <button
+                    onClick={onImageDivination}
+                    className="w-full relative group overflow-hidden rounded-full py-3 px-6 transition-all duration-300"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/60 via-teal-800/60 to-emerald-900/60 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+                    <div className="absolute inset-0 border border-emerald-400/20 rounded-full group-hover:border-emerald-400/50 transition-colors duration-300"></div>
+
+                    <span className="relative z-10 font-serif text-base tracking-[0.15em] text-emerald-200 flex items-center justify-center gap-3 group-hover:gap-5 transition-all duration-300">
+                        <Camera className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
+                        {t('imageDivinationButton', language)}
+                        <Camera className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
+                    </span>
+
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-emerald-200/10 to-transparent"></div>
                 </button>
             </div>
         </div>
