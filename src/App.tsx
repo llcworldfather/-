@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { TarotCard } from './data/cards';
 import { shuffleDeck, drawCardWithReversed } from './utils/tarot';
 import type { DrawnCard } from './utils/tarot';
-import { getTarotReading, getDailyCardReading } from './services/api';
+import { getTarotReading, getDailyCardReading, getRoastReading, getCrazyReading } from './services/api';
 import { hasTodayDailyCard, getTodayDailyCard, saveTodayDailyCard, updateTodayDailyCardReading } from './utils/dailyCard';
 import { useLanguage } from './context/LanguageContext';
 import { t } from './i18n/translations';
@@ -35,7 +35,7 @@ function App() {
 
   // Dynamic page title based on language
   useEffect(() => {
-    document.title = language === 'zh' ? '塔罗占卜带师llc' : 'Tarot Master llc';
+    document.title = language === 'zh' ? '塔罗占卜大师llc' : 'Tarot Master llc';
   }, [language]);
 
   const handleStart = () => {
@@ -127,15 +127,31 @@ function App() {
     });
   };
 
-  const handleRevealComplete = () => {
+  const handleRevealComplete = (mode: 'normal' | 'roast' | 'crazy' = 'normal') => {
     setStage('reading');
 
-    // Fetch reading with streaming
-    getTarotReading(question, drawnCards, language, (chunk) => {
-      setReading(prev => prev + chunk);
-    }).then(() => {
-      setIsReadingComplete(true);
-    });
+    switch (mode) {
+      case 'roast':
+        getRoastReading(question, drawnCards, language, (chunk) => {
+          setReading(prev => prev + chunk);
+        }).then(() => {
+          setIsReadingComplete(true);
+        });
+        break;
+      case 'crazy':
+        getCrazyReading(question, drawnCards, language, (chunk) => {
+          setReading(prev => prev + chunk);
+        }).then(() => {
+          setIsReadingComplete(true);
+        });
+        break;
+      default:
+        getTarotReading(question, drawnCards, language, (chunk) => {
+          setReading(prev => prev + chunk);
+        }).then(() => {
+          setIsReadingComplete(true);
+        });
+    }
   };
 
   const handleReset = () => {

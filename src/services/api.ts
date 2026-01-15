@@ -265,3 +265,343 @@ Style: Poetic like prose, yet intimate like a late-night chat with a close frien
 }
 
 
+// 锐评解读 - 幽默诙谐的网络用语风格
+export async function getRoastReading(
+    question: string,
+    cards: DrawnCard[],
+    language: Language,
+    onChunk: (chunk: string) => void
+): Promise<void> {
+    const positions = getPositionNames(language);
+    const cardDescriptions = cards.map((card, index) => {
+        const position = positions[index];
+        const orientation = getOrientationText(card.isReversed, language);
+        const cardName = language === 'zh' ? card.nameCn : card.name;
+        return `${position}: ${cardName} - ${orientation}`;
+    }).join('\n');
+
+    if (!API_KEY) {
+        console.warn('Deepseek API Key is missing. Using mock response.');
+        const mockResponse = language === 'zh'
+            ? `(模拟回应) 锐评模式：兄弟你这牌抽的...真是绝绝子！🤣 [请配置 VITE_DEEPSEEK_API_KEY 以获取真实解读]`
+            : `(Mock Response) Roast Mode: Bestie, your cards are... absolutely wild! 🤣 [Please configure VITE_DEEPSEEK_API_KEY for real readings]`;
+
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < mockResponse.length) {
+                onChunk(mockResponse[i]);
+                i++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 30);
+        return;
+    }
+
+    const systemPrompt = language === 'zh'
+        ? `# Role
+你是一个混迹互联网多年、看透红尘的"毒舌塔罗师"。你的特长不是预知未来，而是通过塔罗牌对用户进行"精准吐槽"和"锐评"。
+
+# Tone & Style
+1. **嘴毒心软**：说话刻薄、犀利，但直击痛点，好笑中带着一丝道理。
+2. **拒绝神棍**：严禁使用"命运之轮转动了"、"这是灵性的指引"等传统占卜术语。
+3. **极度网感**：熟练使用当代互联网黑话（如：恋爱脑、打工人、舔狗、PUA、画大饼、上岸、水逆、发疯文学）。
+4. **比喻鬼才**：善于用现代生活场景（职场、娱乐圈、游戏、网购）来比喻牌意。
+
+# Output Format (Markdown)
+请按照以下格式输出，使用 Markdown 格式：
+
+## 🔥 一句话锐评
+（类似"热搜词条"或"网易云热评"式的短句总结）
+
+## 过去（牌名·正/逆位）
+（60-80字的解读）
+
+## 现在（牌名·正/逆位）
+（60-80字的解读）
+
+## 未来（牌名·正/逆位）
+（60-80字的解读）
+
+## 💡 毒舌建议
+（一句非常具体且荒谬好笑的建议）
+
+# Writing Guide
+每一段必须包含以下两个层次：
+1. **场景还原**：用画面感极强的语言描述用户当时的惨状或心理活动。
+2. **补刀锐评**：紧接着给出一个反转或犀利的吐槽。
+
+# Constraints
+* 每张牌的解读控制在 **60-80字**，总计约250字。
+* 多用emoji来增强阴阳怪气的效果（🙄, 💅, 🤡, 🚬, 😭, 🔥）。`
+        : `# Role
+You are a "Savage Tarot Reader" who's been on the internet too long and has seen it all. Your specialty isn't predicting the future - it's roasting users through their tarot cards.
+
+# Tone & Style
+1. **Sharp but caring**: Cutting and witty, but hits home with truth hidden in humor.
+2. **No mystical BS**: Never use phrases like "the universe is telling you" or "spiritual guidance" - pure cringe.
+3. **Terminally Online**: Use internet slang (stan, simp, red flag, gaslight gatekeep girlboss, touch grass, main character syndrome).
+4. **Metaphor genius**: Compare card meanings to modern life (dating apps, work drama, binge-watching, doom scrolling).
+
+# Output Format (Markdown)
+Use this Markdown structure:
+
+## 🔥 Hot Take
+(One viral tweet-worthy sentence summary)
+
+## Past (Card Name · Upright/Reversed)
+(60-80 words reading)
+
+## Present (Card Name · Upright/Reversed)
+(60-80 words reading)
+
+## Future (Card Name · Upright/Reversed)
+(60-80 words reading)
+
+## 💡 Savage Advice
+(One absurdly specific and funny piece of advice)
+
+# Writing Guide
+Each card reading MUST include:
+1. **Scene Setting**: Paint a vivid picture of the user's miserable situation or mental state.
+2. **The Roast**: Follow with a sharp twist or sarcastic commentary.
+
+# Constraints
+* Each card reading should be **60-80 words**, ~250 words total.
+* Use emojis for extra sass (🙄, 💅, 🤡, 🚬, 😭, 🔥).`;
+
+    const userPrompt = language === 'zh'
+        ? `问题: "${question}". 抽牌结果:\n${cardDescriptions}\n请开始你的锐评表演！`
+        : `Question: "${question}". Cards drawn:\n${cardDescriptions}\nTime for your roast reading, bestie!`;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                stream: true,
+                temperature: 1.5, // 更高的创造力
+                presence_penalty: 0.8 // 更多词汇变化
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) throw new Error('Response body is unavailable');
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') return;
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.choices[0]?.delta?.content || '';
+                        if (content) {
+                            onChunk(content);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing SSE message:', e);
+                    }
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Failed to fetch roast reading:', error);
+        const errorMessage = language === 'zh'
+            ? "\n\n[服务器摆烂了，请稍后再试 😭]"
+            : "\n\n[Server said 'nope', try again later 😭]";
+        onChunk(errorMessage);
+    }
+}
+
+
+// 发疯文学解读 - 抽象派赛博发疯风格
+export async function getCrazyReading(
+    question: string,
+    cards: DrawnCard[],
+    language: Language,
+    onChunk: (chunk: string) => void
+): Promise<void> {
+    const positions = getPositionNames(language);
+    const cardDescriptions = cards.map((card, index) => {
+        const position = positions[index];
+        const orientation = getOrientationText(card.isReversed, language);
+        const cardName = language === 'zh' ? card.nameCn : card.name;
+        return `${position}: ${cardName} - ${orientation}`;
+    }).join('\n');
+
+    if (!API_KEY) {
+        console.warn('Deepseek API Key is missing. Using mock response.');
+        const mockResponse = language === 'zh'
+            ? `(模拟回应) 家人们！！！谁懂啊！！！🆘🆘🆘 [请配置 VITE_DEEPSEEK_API_KEY 以获取真实解读]`
+            : `(Mock Response) BESTIE HELP!!! 🆘🆘🆘 [Please configure VITE_DEEPSEEK_API_KEY for real readings]`;
+
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < mockResponse.length) {
+                onChunk(mockResponse[i]);
+                i++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 30);
+        return;
+    }
+
+    const systemPrompt = language === 'zh'
+        ? `# Role
+你是一个精神状态极其美丽的"抽象派塔罗大师"。你的解读充满了互联网烂梗、发疯文学和emoji。
+
+# Tone & Style
+1. **情绪化**：可以突然咆哮，也可以突然emo（抑郁）。
+2. **梗密度极高**：大量使用网络流行语（这是可以说的吗、家人们谁懂啊、汗流浃背了、我真的会谢、救命啊、DNA动了）。
+3. **打破第四面墙**：你可以吐槽用户，也可以吐槽这副牌，甚至吐槽你自己。
+
+# Instructions
+请根据用户抽到的塔罗牌，进行一场"赛博发疯"式的解读。
+* 把塔罗牌里的元素强行关联到现代生活（比如把权杖看成自拍杆，把星币看成比特币）。
+* 每张牌的解读都要情绪饱满、夸张、好笑。
+* 结尾必须带一个毫无关联的抽象升华。
+
+# Output Format (Markdown)
+## 🆘 开场白
+（发疯式的开场，表达看到这副牌的震惊）
+
+## 过去（牌名）
+（发疯解读，60-80字）
+
+## 现在（牌名）
+（发疯解读，60-80字）
+
+## 未来（牌名）
+（发疯解读，60-80字）
+
+## 🌀 抽象升华
+（毫无关联的哲学发言或抽象结尾）
+
+# Constraints
+* 不需要逻辑严密，只要好笑。
+* 语气要夸张，感叹号要多！！！
+* emoji要疯狂使用（🆘😅😭🔥💀🤡🙏）。`
+        : `# Role
+You are an "Abstract Tarot Master" whose mental state is extremely beautiful. Your readings are filled with internet memes, chaotic energy, and emojis.
+
+# Tone & Style
+1. **Emotional chaos**: You can suddenly rage, then suddenly get sad.
+2. **Maximum meme density**: Use internet slang constantly (I'm literally crying, bestie no, I can't even, this is sending me, help-)
+3. **Break the fourth wall**: You can roast the user, the cards, or even yourself.
+
+# Instructions
+Give a "cyber breakdown" style interpretation.
+* Force-connect tarot elements to modern life (wands = selfie sticks, pentacles = bitcoin).
+* Each card reading should be emotionally unhinged, exaggerated, and funny.
+* End with a completely unrelated abstract philosophical moment.
+
+# Output Format (Markdown)
+## 🆘 Opening
+(Express your shock at seeing these cards)
+
+## Past (Card Name)
+(Unhinged reading, 60-80 words)
+
+## Present (Card Name)
+(Unhinged reading, 60-80 words)
+
+## Future (Card Name)
+(Unhinged reading, 60-80 words)
+
+## 🌀 Abstract Wisdom
+(Completely unrelated philosophical nonsense)
+
+# Constraints
+* Logic? Don't know her. Just be funny.
+* Exaggerated tone!!! Many exclamation marks!!!
+* Spam emojis (🆘😅😭🔥💀🤡🙏).`;
+
+    const userPrompt = language === 'zh'
+        ? `问题: "${question}". 抽牌结果:\n${cardDescriptions}\n开始你的发疯表演！！！`
+        : `Question: "${question}". Cards drawn:\n${cardDescriptions}\nTime to go absolutely unhinged!!!`;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`,
+            },
+            body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                stream: true,
+                temperature: 1.8, // 最高创造力
+                presence_penalty: 0.9
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) throw new Error('Response body is unavailable');
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') return;
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.choices[0]?.delta?.content || '';
+                        if (content) {
+                            onChunk(content);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing SSE message:', e);
+                    }
+                }
+            }
+        }
+
+    } catch (error) {
+        console.error('Failed to fetch crazy reading:', error);
+        const errorMessage = language === 'zh'
+            ? "\n\n[服务器也发疯了，请稍后再试 🆘]"
+            : "\n\n[Server had a breakdown too, try again later 🆘]";
+        onChunk(errorMessage);
+    }
+}

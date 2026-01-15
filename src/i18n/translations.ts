@@ -28,7 +28,13 @@ type TranslationKey =
     | 'resetButton'
     // Image Generation
     | 'generateImageButton'
-    | 'generatingImage';
+    | 'generatingImage'
+    // Roast Feature
+    | 'roastButton'
+    | 'roasting'
+    | 'roastTitle'
+    // Crazy Feature
+    | 'crazyButton';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
     zh: {
@@ -59,7 +65,13 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         resetButton: '探索新的命运',
         // Image Generation
         generateImageButton: '生成图片',
-        generatingImage: '生成中...'
+        generatingImage: '生成中...',
+        // Roast Feature
+        roastButton: '🔥 锐评',
+        roasting: '锐评生成中...',
+        roastTitle: '毒舌锐评',
+        // Crazy Feature
+        crazyButton: '🌀 发疯文学'
     },
     en: {
         // Welcome Screen
@@ -89,7 +101,13 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         resetButton: 'Explore New Destiny',
         // Image Generation
         generateImageButton: 'Generate Image',
-        generatingImage: 'Generating...'
+        generatingImage: 'Generating...',
+        // Roast Feature
+        roastButton: '🔥 Roast',
+        roasting: 'Roasting...',
+        roastTitle: 'Roast Reading',
+        // Crazy Feature
+        crazyButton: '🌀 Chaos'
     }
 };
 

@@ -5,9 +5,11 @@ import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import { HolographicCard } from './HolographicCard';
 
+export type ReadingMode = 'normal' | 'roast' | 'crazy';
+
 interface CardRevealProps {
     cards: DrawnCard[];
-    onComplete: () => void;
+    onComplete: (mode: ReadingMode) => void;
 }
 
 export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => {
@@ -68,17 +70,32 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
                 })}
             </div>
 
-            <motion.button
-                onClick={onComplete}
+            {/* Three button options: Normal, Roast, and Crazy */}
+            <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 2.5 }}
-                className="relative z-50 mt-12 px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-purple-500/30 animate-pulse"
+                className="flex flex-col sm:flex-row gap-4 mt-12"
             >
-                {t('interpretButton', language)}
-            </motion.button>
+                <button
+                    onClick={() => onComplete('normal')}
+                    className="relative z-50 px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-purple-500/30 animate-pulse"
+                >
+                    ✨ {t('interpretButton', language)}
+                </button>
+                <button
+                    onClick={() => onComplete('roast')}
+                    className="relative z-50 px-8 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-orange-500/30"
+                >
+                    {t('roastButton', language)}
+                </button>
+                <button
+                    onClick={() => onComplete('crazy')}
+                    className="relative z-50 px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-cyan-500/30"
+                >
+                    {t('crazyButton', language)}
+                </button>
+            </motion.div>
         </div>
     );
 };
-
-
