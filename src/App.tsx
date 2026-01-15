@@ -13,6 +13,7 @@ import { ReadingDisplay } from './components/ReadingDisplay';
 import { StarryBackground } from './components/StarryBackground';
 import { DailyCardReveal } from './components/DailyCardReveal';
 import { LanguageToggle } from './components/LanguageToggle';
+import { Analytics } from '@vercel/analytics/react';
 
 type Stage = 'welcome' | 'shuffling' | 'drawing' | 'revealing' | 'reading' | 'daily-shuffling' | 'daily-revealing';
 
@@ -31,6 +32,11 @@ function App() {
 
   // 用于追踪每日解读是否完成，以便保存到 LocalStorage
   const dailyReadingRef = useRef('');
+
+  // Dynamic page title based on language
+  useEffect(() => {
+    document.title = language === 'zh' ? '塔罗占卜带师llc' : 'Tarot Master llc';
+  }, [language]);
 
   const handleStart = () => {
     if (!question.trim()) return;
@@ -206,6 +212,7 @@ function App() {
           />
         )}
       </main>
+      <Analytics />
     </div>
   );
 }
