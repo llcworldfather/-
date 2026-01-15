@@ -8,6 +8,86 @@ interface GenerateImageOptions {
     isDaily?: boolean;
 }
 
+// Generate Pollinations.ai image URL with mystical styling
+export function getMysticalImageUrl(prompt: string): string {
+    const baseUrl = "https://image.pollinations.ai/prompt/";
+
+    const encodedPrompt = encodeURIComponent(prompt);
+    const seed = Math.floor(Math.random() * 1000000);
+    const width = 1200;  // Match canvas dimensions
+    const height = 675;
+
+    // turbo model is faster and has fewer CORS restrictions than flux
+    const model = 'turbo';
+
+    // enhance=true lets AI optimize the prompt for better results
+    // nologo=true attempts to remove watermarks
+    // private=true may help with CORS restrictions
+    return `${baseUrl}${encodedPrompt}?width=${width}&height=${height}&model=${model}&seed=${seed}&nologo=true&enhance=true&private=true`;
+}
+
+// Generate English prompt based on drawn tarot cards
+function generateImagePrompt(cards: DrawnCard[], isDaily: boolean): string {
+    const cardDescriptions = cards.map(card => {
+        const orientation = card.isReversed ? 'reversed' : 'upright';
+        return `${card.name} (${orientation})`;
+    }).join(', ');
+
+    const basePrompt = isDaily
+        ? `A mystical daily tarot reading scene featuring ${cardDescriptions}`
+        : `An enchanting three-card tarot spread showing ${cardDescriptions}`;
+
+    // Add mystical atmosphere keywords
+    const styleKeywords = [
+        'ethereal purple and gold atmosphere',
+        'cinematic lighting',
+        'sacred geometry background',
+        'mysterious fog effects',
+        'art nouveau style',
+        'glowing mystical energy',
+        '8k resolution',
+        'highly detailed tarot art'
+    ].join(', ');
+
+    return `${basePrompt}, ${styleKeywords}`;
+}
+
+// Try to load image from Pollinations.ai with timeout using fetch API
+async function tryLoadPollinationsImage(url: string, timeoutMs: number = 15000): Promise<string | null> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.warn('Pollinations.ai image loading timed out, falling back to canvas');
+    }, timeoutMs);
+
+    try {
+        const response = await fetch(url, {
+            signal: controller.signal,
+            mode: 'cors',
+            referrerPolicy: 'no-referrer'
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            console.warn(`Pollinations.ai returned status ${response.status}, falling back to canvas`);
+            return null;
+        }
+
+        const blob = await response.blob();
+        console.log('Pollinations.ai image loaded successfully');
+        return URL.createObjectURL(blob);
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+            // Timeout already logged
+        } else {
+            console.warn('Pollinations.ai image failed to load, falling back to canvas:', error);
+        }
+        return null;
+    }
+}
+
 // Load image from URL
 function loadImage(src: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
@@ -341,6 +421,22 @@ function formatDate(language: Language): string {
 export async function generateReadingImage(options: GenerateImageOptions): Promise<string> {
     const { cards, summary, language, isDaily = false } = options;
 
+    // Try Pollinations.ai first
+    try {
+        const prompt = generateImagePrompt(cards, isDaily);
+        const imageUrl = getMysticalImageUrl(prompt);
+        console.log('Attempting to load image from Pollinations.ai...');
+
+        const pollinationsResult = await tryLoadPollinationsImage(imageUrl, 20000);
+        if (pollinationsResult) {
+            return pollinationsResult;
+        }
+    } catch (error) {
+        console.warn('Pollinations.ai error, falling back to canvas:', error);
+    }
+
+    // Fallback to Canvas generation
+    console.log('Using Canvas fallback for image generation');
     const width = 1200;
     const height = 675;
 
