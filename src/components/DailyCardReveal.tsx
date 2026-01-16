@@ -118,18 +118,15 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                                 >
                                     {/* Card Back */}
                                     <div
-                                        className="absolute inset-0 rounded-xl shadow-2xl border-4 border-yellow-700/50 bg-slate-900 overflow-hidden"
+                                        className="absolute inset-0 rounded-xl shadow-2xl border-4 border-yellow-700/50 overflow-hidden"
                                         style={{ backfaceVisibility: 'hidden' }}
                                     >
-                                        <div className="absolute inset-2 border border-yellow-600/30 rounded-lg flex items-center justify-center bg-[#1a0b2e]">
-                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/40 via-transparent to-transparent opacity-50"></div>
-                                            <div className="w-full h-full opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <div className="w-24 h-24 border-2 border-yellow-600/40 rotate-45 flex items-center justify-center">
-                                                    <div className="w-16 h-16 border border-yellow-600/30 rotate-45"></div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <img
+                                            src="/cards/back.png"
+                                            alt="Card Back"
+                                            className="w-full h-full object-cover"
+                                            style={{ transform: 'scale(1.15)' }}
+                                        />
                                     </div>
 
                                     {/* Card Front */}
