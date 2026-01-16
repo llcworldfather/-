@@ -109,7 +109,7 @@ You are a Cyber Tarot Master. Interpret images through "serious nonsense" and me
                 generationConfig: {
                     temperature: 1.2,
                     topP: 0.95,
-                    maxOutputTokens: 2048
+                    maxOutputTokens: 4096
                 }
             })
         });
