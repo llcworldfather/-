@@ -371,7 +371,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
                     >
                         {/* Backdrop */}
                         <motion.div
-                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                            className="absolute inset-0 bg-black/95 backdrop-blur-md"
                             onClick={closeFocusMode}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -381,14 +381,14 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
                         {/* Close button */}
                         <button
                             onClick={closeFocusMode}
-                            className="absolute top-6 right-6 z-60 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                            className="absolute top-6 right-6 z-[1001] p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                         >
                             <X className="w-6 h-6 text-white" />
                         </button>
 
                         {/* Hint text */}
                         <motion.p
-                            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-sm tracking-wider"
+                            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-sm tracking-wider z-[1001]"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
@@ -398,7 +398,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
 
                         {/* Enlarged card with 360° rotation - TRUE 3D DUAL FACE */}
                         <motion.div
-                            className="relative cursor-grab active:cursor-grabbing touch-none"
+                            className="relative cursor-grab active:cursor-grabbing touch-none z-[1001]"
                             style={{
                                 transformStyle: 'preserve-3d',
                                 transform: focusTransform,
