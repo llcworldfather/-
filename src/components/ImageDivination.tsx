@@ -139,13 +139,13 @@ export const ImageDivination: React.FC<ImageDivinationProps> = ({ onReset }) => 
                     <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-purple-400/50 rounded-br-lg" />
                 </div>
             ) : (
-                <div className="relative w-full max-w-md">
+                <div className="relative flex flex-col items-center w-full">
                     {/* Image Preview */}
-                    <div className="relative rounded-2xl overflow-hidden border-2 border-purple-400/30">
+                    <div className="relative inline-block rounded-2xl overflow-hidden border-2 border-purple-400/30">
                         <img
                             src={imageData.preview}
                             alt="Uploaded"
-                            className="w-full object-contain max-h-80"
+                            className="block max-w-md max-h-80 w-auto h-auto"
                         />
                         {!reading && !isLoading && (
                             <button
