@@ -49,8 +49,6 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
     // Transform rotation to shine position
     const shineX = useTransform(rotateY, [-20, 20], [-50, 150]);
     const shineY = useTransform(rotateX, [-20, 20], [150, -50]);
-    const focusShineX = useTransform(focusRotateY, [-180, 180], [-50, 150]);
-    const focusShineY = useTransform(focusRotateX, [-180, 180], [150, -50]);
 
     // Handle device orientation for gyroscope effect
     const handleDeviceOrientation = useCallback((event: DeviceOrientationEvent) => {
