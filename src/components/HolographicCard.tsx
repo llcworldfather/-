@@ -402,11 +402,12 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
                             style={{
                                 transformStyle: 'preserve-3d',
                                 transform: focusTransform,
+                                scale: 1.3,
                             }}
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1.3, opacity: 1 }}
-                            exit={{ scale: 0.5, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
                             onPointerDown={(e) => {
                                 e.preventDefault();
                                 handleFocusDragStart(e.clientX, e.clientY);
@@ -429,13 +430,6 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
                                 }}
                             >
                                 {children}
-                                <HolographicEffects
-                                    isActive={true}
-                                    gX={focusGradientX}
-                                    gY={focusGradientY}
-                                    sX={focusShineX}
-                                    sY={focusShineY}
-                                />
                             </div>
 
                             {/* BACK FACE - Card Back Image */}
