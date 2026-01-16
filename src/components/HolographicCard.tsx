@@ -363,7 +363,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
             <AnimatePresence>
                 {isFocusMode && (
                     <motion.div
-                        className="fixed inset-0 z-50 flex items-center justify-center"
+                        className="fixed inset-0 z-[1000] flex items-center justify-center"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -454,7 +454,7 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
                                     className="w-full h-full object-cover"
                                     style={{
                                         // Scale up slightly to crop out black edges
-                                        transform: 'scale(1.05)',
+                                        transform: 'scale(1.15)',
                                     }}
                                 />
 
