@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
@@ -15,6 +15,78 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
     // Track if last interaction was touch to prevent double event firing
     const [isTouchDevice, setIsTouchDevice] = useState(false);
+    // Track if deck is being hovered
+    const [isDeckHovered, setIsDeckHovered] = useState(false);
+
+    // 选择卡牌音效
+    const cardSelectSoundRef = useRef<HTMLAudioElement | null>(null);
+    // 牌库展开音效
+    const deckExpandSoundRef = useRef<HTMLAudioElement | null>(null);
+
+    // 初始化选牌音效
+    useEffect(() => {
+        cardSelectSoundRef.current = new Audio('/audio/card-select.mp3');
+        cardSelectSoundRef.current.preload = 'auto';
+        return () => {
+            if (cardSelectSoundRef.current) {
+                cardSelectSoundRef.current.pause();
+                cardSelectSoundRef.current = null;
+            }
+        };
+    }, []);
+
+    // 初始化牌库展开音效
+    useEffect(() => {
+        deckExpandSoundRef.current = new Audio('/audio/deck-expand.mp3');
+        deckExpandSoundRef.current.preload = 'auto';
+        return () => {
+            if (deckExpandSoundRef.current) {
+                deckExpandSoundRef.current.pause();
+                deckExpandSoundRef.current = null;
+            }
+        };
+    }, []);
+
+    // 播放选牌音效
+    const playCardSelectSound = () => {
+        if (cardSelectSoundRef.current) {
+            cardSelectSoundRef.current.currentTime = 0;
+            cardSelectSoundRef.current.play().catch(err => {
+                console.warn('无法播放选牌音效:', err);
+            });
+        }
+    };
+
+    // 播放牌库展开音效
+    const playDeckExpandSound = () => {
+        if (deckExpandSoundRef.current) {
+            deckExpandSoundRef.current.currentTime = 0;
+            deckExpandSoundRef.current.play().catch(err => {
+                console.warn('无法播放牌库展开音效:', err);
+            });
+        }
+    };
+
+    // 停止牌库展开音效
+    const stopDeckExpandSound = () => {
+        if (deckExpandSoundRef.current) {
+            deckExpandSoundRef.current.pause();
+            deckExpandSoundRef.current.currentTime = 0;
+        }
+    };
+
+    // 处理牌库悬停
+    const handleDeckMouseEnter = () => {
+        if (!isDeckHovered) {
+            setIsDeckHovered(true);
+            playDeckExpandSound();
+        }
+    };
+
+    const handleDeckMouseLeave = () => {
+        setIsDeckHovered(false);
+        stopDeckExpandSound();
+    };
 
     // Handle touch events for mobile - first touch expands, subsequent touches select cards
     const handleCardTouchEnd = useCallback((index: number, e: React.TouchEvent) => {
@@ -30,6 +102,7 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
         }
 
         // Subsequent touches: select the card
+        playCardSelectSound(); // 播放选牌音效
         onDraw(index);
     }, [isMobileExpanded, drawnIndices, onDraw]);
 
@@ -50,6 +123,7 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
         }
 
         // Desktop with hover or already expanded: select the card
+        playCardSelectSound(); // 播放选牌音效
         onDraw(index);
     }, [isTouchDevice, drawnIndices, isMobileExpanded, onDraw]);
     return (
@@ -95,7 +169,11 @@ export const Deck: React.FC<DeckProps> = ({ stage, onDraw, drawnIndices = [] }) 
             )}
 
             {stage === 'drawing' && (
-                <div className={`flex justify-center transition-all duration-500 px-4 ${isMobileExpanded ? '-space-x-32' : '-space-x-48 hover:-space-x-32'}`}>
+                <div
+                    className={`flex justify-center transition-all duration-500 px-4 ${isMobileExpanded ? '-space-x-32' : '-space-x-48 hover:-space-x-32'}`}
+                    onMouseEnter={handleDeckMouseEnter}
+                    onMouseLeave={handleDeckMouseLeave}
+                >
                     {[...Array(22)].map((_, i) => (
                         <motion.div
                             key={i}

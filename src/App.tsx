@@ -14,6 +14,7 @@ import { StarryBackground } from './components/StarryBackground';
 import { DailyCardReveal } from './components/DailyCardReveal';
 import { LanguageToggle } from './components/LanguageToggle';
 import { ImageDivination } from './components/ImageDivination';
+import { BackgroundMusic } from './components/BackgroundMusic';
 import { Analytics } from '@vercel/analytics/react';
 
 type Stage = 'welcome' | 'shuffling' | 'drawing' | 'revealing' | 'reading' | 'daily-shuffling' | 'daily-revealing' | 'image-divination';
@@ -31,6 +32,39 @@ function App() {
   const [dailyReading, setDailyReading] = useState('');
   const [isDailyReadingComplete, setIsDailyReadingComplete] = useState(false);
 
+  // 洗牌音效 ref
+  const shuffleSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // 初始化洗牌音效
+  useEffect(() => {
+    shuffleSoundRef.current = new Audio('/audio/shuffle-sound.mp3');
+    shuffleSoundRef.current.preload = 'auto';
+    return () => {
+      if (shuffleSoundRef.current) {
+        shuffleSoundRef.current.pause();
+        shuffleSoundRef.current = null;
+      }
+    };
+  }, []);
+
+  // 播放洗牌音效的函数
+  const playShuffleSound = () => {
+    if (shuffleSoundRef.current) {
+      shuffleSoundRef.current.currentTime = 0;
+      shuffleSoundRef.current.play().catch(err => {
+        console.warn('无法播放洗牌音效:', err);
+      });
+    }
+  };
+
+  // 停止洗牌音效的函数
+  const stopShuffleSound = () => {
+    if (shuffleSoundRef.current) {
+      shuffleSoundRef.current.pause();
+      shuffleSoundRef.current.currentTime = 0;
+    }
+  };
+
   // 用于追踪每日解读是否完成，以便保存到 LocalStorage
   const dailyReadingRef = useRef('');
 
@@ -42,12 +76,14 @@ function App() {
   const handleStart = () => {
     if (!question.trim()) return;
     setStage('shuffling');
+    playShuffleSound(); // 播放洗牌音效
     setDrawnIndices([]);
     setDrawnCards([]); // Reset drawn cards
     setReading(''); // Reset reading
     setIsReadingComplete(false);
 
     setTimeout(() => {
+      stopShuffleSound(); // 停止洗牌音效
       setDeck(shuffleDeck());
       setStage('drawing');
     }, 2500);
@@ -70,12 +106,14 @@ function App() {
 
     // 今天还没抽过牌，走正常流程
     setStage('daily-shuffling');
+    playShuffleSound(); // 播放洗牌音效
     setDailyCard(null);
     setDailyReading('');
     setIsDailyReadingComplete(false);
     dailyReadingRef.current = '';
 
     setTimeout(() => {
+      stopShuffleSound(); // 停止洗牌音效
       const shuffledDeck = shuffleDeck();
       const card = drawCardWithReversed(shuffledDeck[0]);
       setDailyCard(card);
@@ -176,6 +214,9 @@ function App() {
     <div className="min-h-screen flex flex-col items-center justify-center text-slate-100 p-4 overflow-hidden relative font-serif">
       {/* Language Toggle */}
       <LanguageToggle />
+
+      {/* Background Music Control */}
+      <BackgroundMusic />
 
       {/* Dynamic Background */}
       <StarryBackground />

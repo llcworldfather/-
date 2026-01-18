@@ -202,7 +202,6 @@ export const StarryBackground: React.FC = () => {
                 <div className="absolute top-1/4 left-1/4 text-2xl text-amber-100/30 font-serif animate-float blur-[1px]">ᚲ</div>
                 <div className="absolute bottom-1/3 right-1/4 text-3xl text-purple-200/30 font-serif animate-float-delayed blur-[1px]">ᛃ</div>
                 <div className="absolute top-1/2 left-1/5 text-xl text-blue-200/30 font-serif animate-pulse-glow">✧</div>
-                <div className="absolute top-1/5 right-1/5 text-4xl text-fuchsia-200/20 font-serif animate-float-slow">✮</div>
             </div>
         </div>
     );

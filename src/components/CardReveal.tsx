@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { DrawnCard } from '../utils/tarot';
 import { useLanguage } from '../context/LanguageContext';
@@ -15,6 +15,45 @@ interface CardRevealProps {
 export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => {
     const { language } = useLanguage();
     const positions = [t('past', language), t('present', language), t('future', language)];
+
+    // 翻牌音效
+    const flipSoundRef = useRef<HTMLAudioElement | null>(null);
+
+    // 初始化翻牌音效
+    useEffect(() => {
+        flipSoundRef.current = new Audio('/audio/card-flip.wav');
+        flipSoundRef.current.preload = 'auto';
+        return () => {
+            if (flipSoundRef.current) {
+                flipSoundRef.current.pause();
+                flipSoundRef.current = null;
+            }
+        };
+    }, []);
+
+    // 播放翻牌音效，配合卡牌翻转动画的延迟
+    useEffect(() => {
+        const playFlipSound = () => {
+            if (flipSoundRef.current) {
+                // 克隆音频元素以便同时播放多个音效
+                const sound = flipSoundRef.current.cloneNode() as HTMLAudioElement;
+                sound.play().catch(err => {
+                    console.warn('无法播放翻牌音效:', err);
+                });
+            }
+        };
+
+        // 为每张卡牌设置翻转音效的定时器（与动画延迟同步）
+        const timers = cards.map((_, index) => {
+            return setTimeout(() => {
+                playFlipSound();
+            }, index * 500); // 与动画 delay: index * 0.5 同步
+        });
+
+        return () => {
+            timers.forEach(timer => clearTimeout(timer));
+        };
+    }, [cards]);
 
     return (
         <div className="flex flex-col items-center w-full max-w-6xl">
