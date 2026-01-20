@@ -1,7 +1,6 @@
-// Vercel Edge Function for Text-to-Speech using Edge-TTS
-export const config = {
-    runtime: 'edge',
-};
+// Vercel Serverless Function for Text-to-Speech using Edge-TTS
+// Using Node.js runtime for full WebSocket support
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Voice mapping for different languages
 const VOICES: Record<string, string> = {
@@ -11,31 +10,21 @@ const VOICES: Record<string, string> = {
 
 /**
  * Clean markdown text for TTS
- * Remove markdown formatting, emojis, and special characters
  */
 function cleanTextForTTS(text: string): string {
     return text
-        // Remove markdown headers
         .replace(/#{1,6}\s*/g, '')
-        // Remove bold/italic markers
         .replace(/\*{1,3}([^*]+)\*{1,3}/g, '$1')
         .replace(/_{1,3}([^_]+)_{1,3}/g, '$1')
-        // Remove inline code
         .replace(/`([^`]+)`/g, '$1')
-        // Remove links - keep text
         .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        // Remove images
         .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
-        // Remove blockquotes
         .replace(/^>\s*/gm, '')
-        // Remove list markers
         .replace(/^[-*+]\s+/gm, '')
         .replace(/^\d+\.\s+/gm, '')
-        // Remove horizontal rules
         .replace(/^[-*_]{3,}$/gm, '')
-        // Remove emojis (basic range)
         .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/gu, '')
-        // Remove excess whitespace
+        .replace(/[✨✦★☆●○◆◇□■▲△▼▽]/g, '')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
 }
@@ -44,7 +33,6 @@ function cleanTextForTTS(text: string): string {
  * Generate SSML for Edge TTS
  */
 function generateSSML(text: string, voice: string): string {
-    // Escape XML special characters
     const escapedText = text
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -64,106 +52,89 @@ function generateSSML(text: string, voice: string): string {
 /**
  * Connect to Edge TTS WebSocket and generate audio
  */
-async function synthesizeSpeech(text: string, voice: string): Promise<Uint8Array> {
-    const wsUrl = `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId=${crypto.randomUUID().replace(/-/g, '')}`;
+async function synthesizeSpeech(text: string, voice: string): Promise<Buffer> {
+    // Dynamic import for ws package
+    const WebSocket = (await import('ws')).default;
+
+    const connectionId = [...Array(32)].map(() => Math.random().toString(16)[2]).join('');
+    const wsUrl = `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&ConnectionId=${connectionId}`;
 
     const ssml = generateSSML(text, voice);
 
     return new Promise((resolve, reject) => {
-        const audioChunks: Uint8Array[] = [];
+        const audioChunks: Buffer[] = [];
         let resolved = false;
 
-        const ws = new WebSocket(wsUrl);
+        const ws = new WebSocket(wsUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
+                'Origin': 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold'
+            }
+        });
 
-        ws.onopen = () => {
+        ws.on('open', () => {
             // Send configuration
             const configMessage = `Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"false"},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}`;
             ws.send(configMessage);
 
             // Send SSML request
-            const requestId = crypto.randomUUID().replace(/-/g, '');
+            const requestId = [...Array(32)].map(() => Math.random().toString(16)[2]).join('');
             const ssmlMessage = `X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n${ssml}`;
             ws.send(ssmlMessage);
-        };
+        });
 
-        ws.onmessage = async (event) => {
-            if (typeof event.data === 'string') {
-                // Check for turn.end
-                if (event.data.includes('Path:turn.end')) {
+        ws.on('message', (data: Buffer | string) => {
+            if (typeof data === 'string') {
+                if (data.includes('Path:turn.end')) {
                     resolved = true;
                     ws.close();
-
-                    // Combine all audio chunks
-                    const totalLength = audioChunks.reduce((acc, chunk) => acc + chunk.length, 0);
-                    const result = new Uint8Array(totalLength);
-                    let offset = 0;
-                    for (const chunk of audioChunks) {
-                        result.set(chunk, offset);
-                        offset += chunk.length;
-                    }
-                    resolve(result);
+                    resolve(Buffer.concat(audioChunks));
                 }
-            } else if (event.data instanceof Blob) {
-                // Binary audio data
-                const arrayBuffer = await event.data.arrayBuffer();
-                const data = new Uint8Array(arrayBuffer);
-
+            } else if (Buffer.isBuffer(data)) {
                 // Find the audio data separator (two CRLFs)
-                const separator = new TextEncoder().encode('\r\n\r\n');
-                let separatorIndex = -1;
-                for (let i = 0; i < data.length - 3; i++) {
-                    if (data[i] === 0x0D && data[i + 1] === 0x0A &&
-                        data[i + 2] === 0x0D && data[i + 3] === 0x0A) {
-                        separatorIndex = i + 4;
-                        break;
-                    }
-                }
+                const separator = Buffer.from('\r\n\r\n');
+                const separatorIndex = data.indexOf(separator);
 
-                if (separatorIndex > 0 && separatorIndex < data.length) {
-                    audioChunks.push(data.slice(separatorIndex));
+                if (separatorIndex > 0 && separatorIndex + 4 < data.length) {
+                    audioChunks.push(data.slice(separatorIndex + 4));
                 }
             }
-        };
+        });
 
-        ws.onerror = (error) => {
+        ws.on('error', (error) => {
             if (!resolved) {
-                reject(new Error(`WebSocket error: ${error}`));
+                console.error('WebSocket error:', error);
+                reject(error);
             }
-        };
+        });
 
-        ws.onclose = () => {
+        ws.on('close', () => {
             if (!resolved) {
                 reject(new Error('WebSocket closed unexpectedly'));
             }
-        };
+        });
 
-        // Timeout after 30 seconds
+        // Timeout after 60 seconds
         setTimeout(() => {
             if (!resolved) {
                 ws.close();
                 reject(new Error('TTS synthesis timeout'));
             }
-        }, 30000);
+        }, 60000);
     });
 }
 
-export default async function handler(request: Request) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Only allow POST requests
-    if (request.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-            status: 405,
-            headers: { 'Content-Type': 'application/json' },
-        });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const { text, language } = await request.json();
+        const { text, language } = req.body;
 
         if (!text) {
-            return new Response(JSON.stringify({ error: 'Missing text parameter' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            return res.status(400).json({ error: 'Missing text parameter' });
         }
 
         // Get voice based on language
@@ -173,29 +144,25 @@ export default async function handler(request: Request) {
         const cleanedText = cleanTextForTTS(text);
 
         if (!cleanedText) {
-            return new Response(JSON.stringify({ error: 'No speakable text provided' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+            return res.status(400).json({ error: 'No speakable text provided' });
         }
 
+        // Limit text length to avoid timeout
+        const limitedText = cleanedText.substring(0, 3000);
+
         // Generate audio
-        const audioData = await synthesizeSpeech(cleanedText, voice);
+        const audioData = await synthesizeSpeech(limitedText, voice);
 
         // Return audio as MP3
-        const blob = new Blob([audioData as BlobPart], { type: 'audio/mpeg' });
-        return new Response(blob, {
-            headers: {
-                'Content-Type': 'audio/mpeg',
-                'Cache-Control': 'public, max-age=3600',
-            },
-        });
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        return res.send(audioData);
 
     } catch (error) {
         console.error('TTS Error:', error);
-        return new Response(JSON.stringify({ error: 'TTS synthesis failed', message: String(error) }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
+        return res.status(500).json({
+            error: 'TTS synthesis failed',
+            message: error instanceof Error ? error.message : String(error)
         });
     }
 }
