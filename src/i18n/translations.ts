@@ -39,7 +39,11 @@ type TranslationKey =
     | 'imageDivinationButton'
     | 'imageDivinationTitle'
     | 'uploadImagePrompt'
-    | 'startDivination';
+    | 'startDivination'
+    // TTS Feature
+    | 'speakButton'
+    | 'speakingButton'
+    | 'stopSpeakButton';
 
 const translations: Record<Language, Record<TranslationKey, string>> = {
     zh: {
@@ -81,7 +85,11 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         imageDivinationButton: '万物皆可占卜',
         imageDivinationTitle: '图像占卜',
         uploadImagePrompt: '上传一张图片，让塔罗牌解读你的明日运势',
-        startDivination: '开始占卜'
+        startDivination: '开始占卜',
+        // TTS Feature
+        speakButton: '朗读',
+        speakingButton: '朗读中...',
+        stopSpeakButton: '停止'
     },
     en: {
         // Welcome Screen
@@ -122,7 +130,11 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
         imageDivinationButton: 'Divine Anything',
         imageDivinationTitle: 'Image Divination',
         uploadImagePrompt: 'Upload an image and let the tarot reveal your tomorrow',
-        startDivination: 'Start Divination'
+        startDivination: 'Start Divination',
+        // TTS Feature
+        speakButton: 'Speak',
+        speakingButton: 'Speaking...',
+        stopSpeakButton: 'Stop'
     }
 };
 

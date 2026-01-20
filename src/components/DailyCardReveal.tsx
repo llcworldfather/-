@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import type { DrawnCard } from '../utils/tarot';
@@ -25,6 +25,8 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
     const { language } = useLanguage();
     const [isFlipped, setIsFlipped] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Trigger flip after card flies in
     useEffect(() => {
@@ -207,35 +209,89 @@ export const DailyCardReveal: React.FC<DailyCardRevealProps> = ({
                                 {/* Action Buttons */}
                                 <div className="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
                                     {isReadingComplete && (
-                                        <motion.button
-                                            onClick={async () => {
-                                                if (!card) return;
-                                                setIsGenerating(true);
-                                                try {
-                                                    const summary = extractSummary(reading);
-                                                    const blobUrl = await generateReadingImage({
-                                                        cards: [card],
-                                                        summary,
-                                                        language,
-                                                        isDaily: true
-                                                    });
-                                                    const date = new Date().toISOString().split('T')[0];
-                                                    downloadImage(blobUrl, `daily-tarot-${date}.png`);
-                                                } catch (error) {
-                                                    console.error('Failed to generate image:', error);
-                                                } finally {
-                                                    setIsGenerating(false);
-                                                }
-                                            }}
-                                            disabled={isGenerating}
-                                            className="px-8 py-3 bg-amber-600/80 hover:bg-amber-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ delay: 0.5 }}
-                                        >
-                                            <span>📷</span>
-                                            {isGenerating ? t('generatingImage', language) : t('generateImageButton', language)}
-                                        </motion.button>
+                                        <>
+                                            <motion.button
+                                                onClick={async () => {
+                                                    if (!card) return;
+                                                    setIsGenerating(true);
+                                                    try {
+                                                        const summary = extractSummary(reading);
+                                                        const blobUrl = await generateReadingImage({
+                                                            cards: [card],
+                                                            summary,
+                                                            language,
+                                                            isDaily: true
+                                                        });
+                                                        const date = new Date().toISOString().split('T')[0];
+                                                        downloadImage(blobUrl, `daily-tarot-${date}.png`);
+                                                    } catch (error) {
+                                                        console.error('Failed to generate image:', error);
+                                                    } finally {
+                                                        setIsGenerating(false);
+                                                    }
+                                                }}
+                                                disabled={isGenerating}
+                                                className="px-8 py-3 bg-amber-600/80 hover:bg-amber-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ delay: 0.5 }}
+                                            >
+                                                <span>📷</span>
+                                                {isGenerating ? t('generatingImage', language) : t('generateImageButton', language)}
+                                            </motion.button>
+                                            <motion.button
+                                                onClick={async () => {
+                                                    if (isSpeaking && audioRef.current) {
+                                                        audioRef.current.pause();
+                                                        audioRef.current.currentTime = 0;
+                                                        setIsSpeaking(false);
+                                                        return;
+                                                    }
+
+                                                    setIsSpeaking(true);
+                                                    try {
+                                                        const response = await fetch('/api/tts', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ text: reading, language })
+                                                        });
+
+                                                        if (!response.ok) {
+                                                            throw new Error('TTS request failed');
+                                                        }
+
+                                                        const audioBlob = await response.blob();
+                                                        const audioUrl = URL.createObjectURL(audioBlob);
+
+                                                        const audio = new Audio(audioUrl);
+                                                        audioRef.current = audio;
+
+                                                        audio.onended = () => {
+                                                            setIsSpeaking(false);
+                                                            URL.revokeObjectURL(audioUrl);
+                                                        };
+
+                                                        audio.onerror = () => {
+                                                            setIsSpeaking(false);
+                                                            URL.revokeObjectURL(audioUrl);
+                                                        };
+
+                                                        await audio.play();
+                                                    } catch (error) {
+                                                        console.error('TTS failed:', error);
+                                                        setIsSpeaking(false);
+                                                    }
+                                                }}
+                                                disabled={isGenerating}
+                                                className="px-8 py-3 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-full font-serif tracking-widest transition-all shadow-lg hover:shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                transition={{ delay: 0.7 }}
+                                            >
+                                                <span>{isSpeaking ? '⏹️' : '🔊'}</span>
+                                                {isSpeaking ? t('stopSpeakButton', language) : t('speakButton', language)}
+                                            </motion.button>
+                                        </>
                                     )}
                                     <motion.button
                                         onClick={onReset}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,6 +16,8 @@ interface ReadingDisplayProps {
 export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, cards, isReadingComplete, onReset }) => {
     const { language } = useLanguage();
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     return (
         <motion.div
@@ -66,34 +68,89 @@ export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, cards, 
 
             <div className="mt-16 flex flex-col sm:flex-row justify-center items-center gap-4">
                 {isReadingComplete && cards.length > 0 && (
-                    <button
-                        onClick={async () => {
-                            setIsGenerating(true);
-                            try {
-                                const summary = extractSummary(reading);
-                                const blobUrl = await generateReadingImage({
-                                    cards,
-                                    summary,
-                                    language,
-                                    isDaily: false
-                                });
-                                const date = new Date().toISOString().split('T')[0];
-                                downloadImage(blobUrl, `tarot-reading-${date}.png`);
-                            } catch (error) {
-                                console.error('Failed to generate image:', error);
-                            } finally {
-                                setIsGenerating(false);
-                            }
-                        }}
-                        disabled={isGenerating}
-                        className="group relative px-10 py-4 rounded-full border border-purple-500/30 hover:border-purple-400/50 bg-purple-500/10 hover:bg-purple-500/20 transition-all duration-500 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
-                        <span className="flex items-center gap-3 text-sm uppercase tracking-[0.2em] text-purple-200 group-hover:text-purple-100 transition-colors">
-                            <span className="transition-transform group-hover:scale-110 duration-500">📷</span>
-                            {isGenerating ? t('generatingImage', language) : t('generateImageButton', language)}
-                        </span>
-                    </button>
+                    <>
+                        <button
+                            onClick={async () => {
+                                setIsGenerating(true);
+                                try {
+                                    const summary = extractSummary(reading);
+                                    const blobUrl = await generateReadingImage({
+                                        cards,
+                                        summary,
+                                        language,
+                                        isDaily: false
+                                    });
+                                    const date = new Date().toISOString().split('T')[0];
+                                    downloadImage(blobUrl, `tarot-reading-${date}.png`);
+                                } catch (error) {
+                                    console.error('Failed to generate image:', error);
+                                } finally {
+                                    setIsGenerating(false);
+                                }
+                            }}
+                            disabled={isGenerating}
+                            className="group relative px-10 py-4 rounded-full border border-purple-500/30 hover:border-purple-400/50 bg-purple-500/10 hover:bg-purple-500/20 transition-all duration-500 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+                            <span className="flex items-center gap-3 text-sm uppercase tracking-[0.2em] text-purple-200 group-hover:text-purple-100 transition-colors">
+                                <span className="transition-transform group-hover:scale-110 duration-500">📷</span>
+                                {isGenerating ? t('generatingImage', language) : t('generateImageButton', language)}
+                            </span>
+                        </button>
+                        <button
+                            onClick={async () => {
+                                if (isSpeaking && audioRef.current) {
+                                    // Stop speaking
+                                    audioRef.current.pause();
+                                    audioRef.current.currentTime = 0;
+                                    setIsSpeaking(false);
+                                    return;
+                                }
+
+                                setIsSpeaking(true);
+                                try {
+                                    const response = await fetch('/api/tts', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ text: reading, language })
+                                    });
+
+                                    if (!response.ok) {
+                                        throw new Error('TTS request failed');
+                                    }
+
+                                    const audioBlob = await response.blob();
+                                    const audioUrl = URL.createObjectURL(audioBlob);
+
+                                    const audio = new Audio(audioUrl);
+                                    audioRef.current = audio;
+
+                                    audio.onended = () => {
+                                        setIsSpeaking(false);
+                                        URL.revokeObjectURL(audioUrl);
+                                    };
+
+                                    audio.onerror = () => {
+                                        setIsSpeaking(false);
+                                        URL.revokeObjectURL(audioUrl);
+                                    };
+
+                                    await audio.play();
+                                } catch (error) {
+                                    console.error('TTS failed:', error);
+                                    setIsSpeaking(false);
+                                }
+                            }}
+                            disabled={isGenerating}
+                            className="group relative px-10 py-4 rounded-full border border-emerald-500/30 hover:border-emerald-400/50 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all duration-500 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+                            <span className="flex items-center gap-3 text-sm uppercase tracking-[0.2em] text-emerald-200 group-hover:text-emerald-100 transition-colors">
+                                <span className="transition-transform group-hover:scale-110 duration-500">{isSpeaking ? '⏹️' : '🔊'}</span>
+                                {isSpeaking ? t('stopSpeakButton', language) : t('speakButton', language)}
+                            </span>
+                        </button>
+                    </>
                 )}
                 <button
                     onClick={onReset}
