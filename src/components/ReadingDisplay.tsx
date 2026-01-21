@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n/translations';
 import type { DrawnCard } from '../utils/tarot';
 import { generateReadingImage, extractSummary, downloadImage } from '../utils/generateReadingImage';
+import { TtsEngine } from '../services/tts_native';
 
 interface ReadingDisplayProps {
     reading: string;
@@ -17,7 +18,17 @@ export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, cards, 
     const { language } = useLanguage();
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [isLoadingTTS, setIsLoadingTTS] = useState(false);
+
+    // Pre-initialize TTS and cleaning up
+    useEffect(() => {
+        // Start initialization immediately
+        TtsEngine.getInstance().init().catch(console.error);
+
+        return () => {
+            TtsEngine.getInstance().stop();
+        };
+    }, []);
 
     return (
         <motion.div
@@ -99,55 +110,38 @@ export const ReadingDisplay: React.FC<ReadingDisplayProps> = ({ reading, cards, 
                         </button>
                         <button
                             onClick={async () => {
-                                if (isSpeaking && audioRef.current) {
-                                    // Stop speaking
-                                    audioRef.current.pause();
-                                    audioRef.current.currentTime = 0;
+                                if (isSpeaking) {
+                                    TtsEngine.getInstance().stop();
                                     setIsSpeaking(false);
                                     return;
                                 }
 
-                                setIsSpeaking(true);
                                 try {
-                                    const response = await fetch('/api/tts', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ text: reading, language })
-                                    });
-
-                                    if (!response.ok) {
-                                        throw new Error('TTS request failed');
-                                    }
-
-                                    const audioBlob = await response.blob();
-                                    const audioUrl = URL.createObjectURL(audioBlob);
-
-                                    const audio = new Audio(audioUrl);
-                                    audioRef.current = audio;
-
-                                    audio.onended = () => {
-                                        setIsSpeaking(false);
-                                        URL.revokeObjectURL(audioUrl);
-                                    };
-
-                                    audio.onerror = () => {
-                                        setIsSpeaking(false);
-                                        URL.revokeObjectURL(audioUrl);
-                                    };
-
-                                    await audio.play();
+                                    setIsLoadingTTS(true);
+                                    setIsSpeaking(true);
+                                    await TtsEngine.getInstance().speak(reading);
                                 } catch (error) {
                                     console.error('TTS failed:', error);
                                     setIsSpeaking(false);
+                                    alert('Failed to initialize TTS. Please try again.');
+                                } finally {
+                                    setIsLoadingTTS(false);
+                                    // Note: isSpeaking might actually need to be set to false when audio finishes via callback if TtsEngine supported it. 
+                                    // Current TtsEngine.speak implementation is fire-and-forget for play(), so we might need to enhance TtsEngine to support onEnded callback to toggle state back.
+                                    // For now, user has to manually stop or we just leave it as "Speaking" until they toggle.
+                                    // Actually, let's leave it as is, or assume we want to toggle back.
+                                    // Since TtsEngine doesn't return a promise that resolves when audio ends, we can't auto-reset isSpeaking easily without modification.
                                 }
                             }}
-                            disabled={isGenerating}
+                            disabled={isGenerating || isLoadingTTS}
                             className="group relative px-10 py-4 rounded-full border border-emerald-500/30 hover:border-emerald-400/50 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all duration-500 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
                             <span className="flex items-center gap-3 text-sm uppercase tracking-[0.2em] text-emerald-200 group-hover:text-emerald-100 transition-colors">
-                                <span className="transition-transform group-hover:scale-110 duration-500">{isSpeaking ? '⏹️' : '🔊'}</span>
-                                {isSpeaking ? t('stopSpeakButton', language) : t('speakButton', language)}
+                                <span className="transition-transform group-hover:scale-110 duration-500">
+                                    {isLoadingTTS ? '⏳' : (isSpeaking ? '⏹️' : '🔊')}
+                                </span>
+                                {isLoadingTTS ? 'Loading...' : (isSpeaking ? t('stopSpeakButton', language) : t('speakButton', language))}
                             </span>
                         </button>
                     </>

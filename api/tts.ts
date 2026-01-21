@@ -1,5 +1,3 @@
-// Vercel Serverless Function for Text-to-Speech
-// Using Edge TTS for natural, expressive speech
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { tts } from 'edge-tts';
 
