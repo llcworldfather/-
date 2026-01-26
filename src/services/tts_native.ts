@@ -51,7 +51,7 @@ export class TtsEngine {
 
         console.log('TTS using voice:', zhVoice ? zhVoice.name : 'System Default');
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             let currentIndex = 0;
 
             const speakNext = () => {
