@@ -57,7 +57,7 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
 
     return (
         <div className="flex flex-col items-center w-full max-w-6xl">
-            <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-24 items-center justify-center w-full">
+            <div className="flex flex-col md:flex-row gap-8 md:gap-8 mb-8 md:mb-24 items-center justify-center w-full">
                 {cards.map((card, index) => {
                     const position = positions[index];
                     const cardName = language === 'zh' ? card.nameCn : card.name;
