@@ -211,7 +211,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-slate-100 p-4 overflow-x-hidden relative font-serif">
+    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center text-slate-100 p-4 pt-20 md:pt-4 overflow-x-hidden relative font-serif">
       {/* Language Toggle */}
       <LanguageToggle />
 
