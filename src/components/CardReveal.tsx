@@ -57,7 +57,7 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
 
     return (
         <div className="flex flex-col items-center w-full max-w-6xl">
-            <div className="flex flex-col md:flex-row gap-8 md:gap-8 mb-8 md:mb-24 items-center justify-center w-full">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-8 md:mb-24 items-center justify-center w-full">
                 {cards.map((card, index) => {
                     const position = positions[index];
                     const cardName = language === 'zh' ? card.nameCn : card.name;
@@ -74,7 +74,7 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
                                 {position}
                                 <span className="w-1 h-1 rounded-full bg-amber-400 shadow-[0_0_5px_currentColor]"></span>
                             </div>
-                            <HolographicCard className="w-48 h-72 md:w-56 md:h-80">
+                            <HolographicCard className="w-32 h-48 md:w-56 md:h-80">
                                 <div className="relative w-full h-full [transform-style:preserve-3d] transition-all duration-700 animate-[flip_1s_ease_forwards] shadow-2xl" style={{ animationDelay: `${index * 0.5}s` }}>
                                     {/* Card Back - visible initially */}
                                     <div
