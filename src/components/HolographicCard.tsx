@@ -188,18 +188,18 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
             return;
         }
 
-        if (isGyroActive) return;
-
         e.preventDefault();
         pressStartTime.current = Date.now();
         isLongPress.current = false;
 
-        // Start long press timer
-        longPressTimer.current = setTimeout(() => {
-            isLongPress.current = true;
-            setIsPressed(true);
-            updateRotation(e.clientX, e.clientY);
-        }, LONG_PRESS_THRESHOLD);
+        // Only start long press tilt timer when gyro is NOT active
+        if (!isGyroActive) {
+            longPressTimer.current = setTimeout(() => {
+                isLongPress.current = true;
+                setIsPressed(true);
+                updateRotation(e.clientX, e.clientY);
+            }, LONG_PRESS_THRESHOLD);
+        }
     }, [disabled, isFocusMode, gyroPermissionNeeded, isGyroActive, requestGyroPermission, updateRotation]);
 
     // Handle pointer up - check if short or long press
@@ -215,12 +215,13 @@ export const HolographicCard: React.FC<HolographicCardProps> = ({
         const pressDuration = Date.now() - pressStartTime.current;
 
         // If it was a short press (not a long press), enter focus mode
-        if (!isLongPress.current && pressDuration < LONG_PRESS_THRESHOLD) {
+        if (pressStartTime.current > 0 && !isLongPress.current && pressDuration < LONG_PRESS_THRESHOLD) {
             setIsFocusMode(true);
             focusRotateX.set(0);
             focusRotateY.set(0);
         }
 
+        pressStartTime.current = 0;
         setIsPressed(false);
         rotateX.set(0);
         rotateY.set(0);
